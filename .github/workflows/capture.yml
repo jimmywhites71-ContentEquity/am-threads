@@ -1,0 +1,32 @@
+name: Screenshots
+
+# Above-the-fold and full-page screenshots of newly read pieces, after the daily pipeline.
+# Needs secrets NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY, and a private storage
+# bucket called "captures" in the Supabase project.
+on:
+  schedule:
+    - cron: '53 6 * * *'
+  workflow_dispatch:
+    inputs:
+      limit:
+        description: 'Pieces to capture'
+        required: false
+        default: '60'
+
+jobs:
+  capture:
+    runs-on: ubuntu-latest
+    timeout-minutes: 90
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with:
+          node-version: 20
+      - run: npm install --no-audit --no-fund
+      - run: npx playwright install --with-deps chromium
+      - name: Capture
+        env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+          BOT_CONTACT_URL: ${{ vars.BOT_CONTACT_URL }}
+        run: npm run capture -- --limit ${{ github.event.inputs.limit || '60' }}

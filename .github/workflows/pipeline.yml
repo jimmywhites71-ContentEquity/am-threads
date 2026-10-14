@@ -1,0 +1,58 @@
+name: Daily pipeline
+
+# Discover new pages, read and measure them, then summarise and tag. Each step is paged and called
+# again until its queue is empty or the run's time is up. Set the repository variable SITE_URL
+# (e.g. https://am-intelligence.vercel.app) and the secret PIPELINE_API_KEY.
+on:
+  schedule:
+    - cron: '17 5 * * *'   # 05:17 UTC, a quiet minute
+  workflow_dispatch:
+    inputs:
+      days:
+        description: 'Look back this many days when discovering (365 for a backfill)'
+        required: false
+        default: '14'
+      pages:
+        description: 'Most read/tag calls per step'
+        required: false
+        default: '20'
+
+permissions:
+  issues: write
+
+jobs:
+  pipeline:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      SITE: ${{ vars.SITE_URL }}
+      AUTH: 'Authorization: Bearer ${{ secrets.PIPELINE_API_KEY }}'
+    steps:
+      - name: Discover
+        run: |
+          curl -sS -L -X POST "$SITE/api/discover?days=${{ github.event.inputs.days || '14' }}" -H "$AUTH" --max-time 300 -o discover.json || true
+          cat discover.json; echo
+      - name: Read and measure
+        run: |
+          for i in $(seq 1 ${{ github.event.inputs.pages || '20' }}); do
+            curl -sS -L -X POST "$SITE/api/process?limit=40" -H "$AUTH" --max-time 300 -o p.json || break
+            cat p.json; echo
+            [ "$(jq -r '.remaining // 0' p.json)" -gt 0 ] && [ "$(jq -r '.taken // 0' p.json)" -gt 0 ] || break
+          done
+      - name: Summarise and tag
+        run: |
+          for i in $(seq 1 ${{ github.event.inputs.pages || '20' }}); do
+            curl -sS -L -X POST "$SITE/api/classify?limit=60" -H "$AUTH" --max-time 300 -o c.json || break
+            cat c.json; echo
+            [ "$(jq -r '.remaining // 0' c.json)" -gt 0 ] && [ "$(jq -r '.tagged // 0' c.json)" -gt 0 ] || break
+          done
+      - name: Publish status
+        if: always()
+        continue-on-error: true
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          curl -sS -L "$SITE/api/status" -H "$AUTH" --fail --max-time 60 -o status.md || echo "The status report could not be read on this run." > status.md
+          echo "Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" >> status.md
+          n=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "Pipeline status in:title" --json number,title --jq '[.[] | select(.title == "Pipeline status")][0].number // empty')
+          if [ -n "$n" ]; then gh issue edit "$n" --repo "$GITHUB_REPOSITORY" --body-file status.md; else gh issue create --repo "$GITHUB_REPOSITORY" --title "Pipeline status" --body-file status.md; fi

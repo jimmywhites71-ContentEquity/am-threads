@@ -1,0 +1,9 @@
+{
+  "framework": "nextjs",
+  "functions": {
+    "app/api/discover/route.ts": { "maxDuration": 300 },
+    "app/api/process/route.ts": { "maxDuration": 300 },
+    "app/api/classify/route.ts": { "maxDuration": 300 }
+  },
+  "regions": ["lhr1"]
+}
