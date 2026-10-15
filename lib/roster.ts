@@ -126,7 +126,16 @@ export const ROSTER: RosterRow[] = [
   { rank: 98, group: 'Scotiabank', market: 'Canada', aum_musd: 229660, status: 'wave 2', houses: ['1832-am'], note: '1832 Asset Management.' },
   { rank: 99, group: 'Zurcher Kantonalbank', market: 'Switzerland', aum_musd: 225839, status: 'wave 2', houses: ['swisscanto'], note: 'Swisscanto; mainly German-language.' },
   { rank: 100, group: 'BMO Wealth Mgmt.', market: 'Canada', aum_musd: 225498, status: 'wave 2', houses: ['bmo-gam'] },
-  // Outside the top 100: in the first roster (14 Oct), kept until James decides
-  { rank: null, group: 'AQR', market: 'U.S.', aum_musd: null, status: 'wave 1', houses: ['aqr'], note: 'Outside the top 100; kept from the first roster. Confirm.' },
-  { rank: null, group: 'Bridgewater', market: 'U.S.', aum_musd: null, status: 'wave 1', houses: ['bridgewater'], note: 'Outside the top 100; kept from the first roster. Confirm.' },
+  // Outside the top 100, added to wave 1 by James (15 Oct 2026). Ranks are from the same ranking where
+  // the house appears in it; M&G, Blackstone and Apollo are not in it.
+  { rank: null, group: 'AQR', market: 'U.S.', aum_musd: null, status: 'wave 1', houses: ['aqr'], note: 'Outside the ranked list; added by James.' },
+  { rank: null, group: 'Bridgewater', market: 'U.S.', aum_musd: null, status: 'wave 1', houses: ['bridgewater'], note: 'Outside the ranked list; added by James.' },
+  { rank: null, group: 'M&G', market: 'U.K.', aum_musd: null, status: 'wave 1', houses: ['mandg'], note: 'Not in the ranking; added by James. Includes Bond Vigilantes, which AlphaThreads also reads (see attention-index rule).' },
+  { rank: null, group: 'Blackstone', market: 'U.S.', aum_musd: null, status: 'wave 1', houses: ['blackstone'], note: 'Not in the ranking; added by James.' },
+  { rank: null, group: 'Apollo', market: 'U.S.', aum_musd: null, status: 'wave 1', houses: ['apollo'], note: 'Not in the ranking; added by James.' },
+  { rank: null, group: 'Lazard', market: 'U.S.', aum_musd: 216125, status: 'wave 1', houses: ['lazard'], note: 'Rank 103; added by James.' },
+  { rank: null, group: 'Robeco Group', market: 'Netherlands', aum_musd: 182623, status: 'wave 1', houses: ['robeco'], note: 'Rank 115; added by James.' },
+  { rank: null, group: 'Royal London Group', market: 'U.K.', aum_musd: 177497, status: 'wave 1', houses: ['rlam'], note: 'Rank 118; added by James.' },
+  { rank: null, group: 'Man Group', market: 'U.K.', aum_musd: 143300, status: 'wave 1', houses: ['man-group'], note: 'Rank 139; added by James.' },
+  { rank: null, group: 'Ninety One', market: 'South Africa', aum_musd: 159294, status: 'wave 1', houses: ['ninety-one'], note: 'Rank 132; added by James.' },
 ]

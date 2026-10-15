@@ -116,6 +116,15 @@ const HOUSES: HouseSpec[] = [
   ['baillie-gifford', 'Baillie Gifford', 'https://www.bailliegifford.com'],
   ['aviva-investors', 'Aviva Investors', 'https://www.avivainvestors.com'],
   ['pictet-am', 'Pictet Asset Management', 'https://am.pictet'],
+  // Added to wave 1 by James (15 Oct)
+  ['mandg', 'M&G Investments', 'https://www.mandg.com', '/(investments/[^?#]*(insights|thinking|perspectives)|insights)/'],
+  ['blackstone', 'Blackstone', 'https://www.blackstone.com', '/insights/'],
+  ['apollo', 'Apollo', 'https://www.apollo.com', '/insights-news/(insights|pymts)/'],
+  ['lazard', 'Lazard Asset Management', 'https://www.lazardassetmanagement.com'],
+  ['robeco', 'Robeco', 'https://www.robeco.com'],
+  ['rlam', 'Royal London Asset Management', 'https://www.rlam.com'],
+  ['man-group', 'Man Group', 'https://www.man.com', '/(insights|maninstitute)/'],
+  ['ninety-one', 'Ninety One', 'https://ninetyone.com'],
   // Wave 2
   ['mackenzie', 'Mackenzie Investments', 'https://www.mackenzieinvestments.com'],
   ['amova', 'Amova Asset Management (formerly Nikko AM)', 'https://www.nikkoam.com'],
