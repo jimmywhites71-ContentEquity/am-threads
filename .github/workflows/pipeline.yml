@@ -29,9 +29,11 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 120
     env:
-      SITE: ${{ vars.SITE_URL }}
+      SITE_RAW: ${{ vars.SITE_URL }}
       AUTH: 'Authorization: Bearer ${{ secrets.PIPELINE_API_KEY }}'
     steps:
+      - name: Site address
+        run: echo "SITE=${SITE_RAW%/}" >> "$GITHUB_ENV"
       - name: Discover
         run: |
           offset=0
