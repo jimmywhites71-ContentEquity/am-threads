@@ -1,0 +1,53 @@
+name: Source check
+
+# Dry run of discovery: for each house, how many pages it would find and a sample, or why it fails.
+# Stores nothing. Files the result to the "Source check" issue.
+on:
+  workflow_dispatch:
+    inputs:
+      wave:
+        description: '1, 2 or all'
+        required: false
+        default: '1'
+      days:
+        description: 'Look back this many days'
+        required: false
+        default: '30'
+
+permissions:
+  issues: write
+
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      SITE: ${{ vars.SITE_URL }}
+      AUTH: 'Authorization: Bearer ${{ secrets.PIPELINE_API_KEY }}'
+    steps:
+      - name: Dry run
+        run: |
+          echo '{}' > all.json; offset=0
+          while [ -n "$offset" ] && [ "$offset" != "null" ]; do
+            curl -sS -L -X POST "$SITE/api/discover?dry=1&days=${{ github.event.inputs.days }}&wave=${{ github.event.inputs.wave }}&offset=$offset&batch=8" -H "$AUTH" --max-time 300 -o page.json || { echo "call failed at $offset"; break; }
+            jq -s '.[0] * (.[1].sources // {})' all.json page.json > merged.json && mv merged.json all.json
+            offset=$(jq -r '.next_offset' page.json)
+          done
+          {
+            echo "Run $(date -u '+%Y-%m-%d %H:%M') UTC, wave ${{ github.event.inputs.wave }}, last ${{ github.event.inputs.days }} days: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
+            echo
+            echo "Working: $(jq '[.[] | select(.found > 0)] | length' all.json). Found nothing: $(jq '[.[] | select(.found == 0)] | length' all.json). Failing: $(jq '[.[] | select(.error)] | length' all.json)."
+            echo
+            echo "| Source | Found | Sample or error |"
+            echo "|---|---|---|"
+            jq -r 'to_entries | sort_by(.value.found // -1) | .[] | "| \(.key) | \(.value.found // "–") | \(.value.error // ((.value.sample // [])[0:2] | join("<br>"))) |"' all.json
+          } > report.md
+          cat report.md
+      - name: File the report
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          [ -f report.md ] || echo "No report produced." > report.md
+          n=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "Source check in:title" --json number,title --jq '[.[] | select(.title == "Source check")][0].number // empty')
+          if [ -n "$n" ]; then gh issue edit "$n" --repo "$GITHUB_REPOSITORY" --body-file report.md; else gh issue create --repo "$GITHUB_REPOSITORY" --title "Source check" --body-file report.md; fi
