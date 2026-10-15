@@ -1,4 +1,4 @@
-# AM Intelligence
+# AM Intelligence (repository: am-threads)
 
 A structured record of what asset managers publish — asset class, sub-asset class, theme, format,
 length, readability, structure and visual treatment — for reports, white-space analysis, data
