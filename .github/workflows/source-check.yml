@@ -27,15 +27,21 @@ jobs:
     steps:
       - name: Dry run
         run: |
-          echo '{}' > all.json; offset=0
-          while [ -n "$offset" ] && [ "$offset" != "null" ]; do
-            curl -sS -L -X POST "$SITE/api/discover?dry=1&days=${{ github.event.inputs.days }}&wave=${{ github.event.inputs.wave }}&offset=$offset&batch=8" -H "$AUTH" --max-time 300 -o page.json || { echo "call failed at $offset"; break; }
+          echo '{}' > all.json; offset=0; problem=""
+          if [ -z "$SITE" ]; then problem="The repository variable SITE_URL is not set."; fi
+          while [ -z "$problem" ] && [ -n "$offset" ] && [ "$offset" != "null" ]; do
+            code=$(curl -sS -L -X POST "$SITE/api/discover?dry=1&days=${{ github.event.inputs.days }}&wave=${{ github.event.inputs.wave }}&offset=$offset&batch=8" -H "$AUTH" --max-time 300 -o page.json -w '%{http_code}' || echo "000")
+            if [ "$code" != "200" ] || ! jq -e . page.json >/dev/null 2>&1; then
+              problem="Call to $SITE/api/discover failed at source $offset: HTTP $code. Reply began: $(head -c 300 page.json 2>/dev/null | tr '\n' ' ')"
+              break
+            fi
             jq -s '.[0] * (.[1].sources // {})' all.json page.json > merged.json && mv merged.json all.json
             offset=$(jq -r '.next_offset' page.json)
           done
           {
             echo "Run $(date -u '+%Y-%m-%d %H:%M') UTC, wave ${{ github.event.inputs.wave }}, last ${{ github.event.inputs.days }} days: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"
             echo
+            [ -n "$problem" ] && { echo "**Problem:** $problem"; echo; }
             echo "Working: $(jq '[.[] | select(.found > 0)] | length' all.json). Found nothing: $(jq '[.[] | select(.found == 0)] | length' all.json). Failing: $(jq '[.[] | select(.error)] | length' all.json)."
             echo
             echo "| Source | Found | Sample or error |"
