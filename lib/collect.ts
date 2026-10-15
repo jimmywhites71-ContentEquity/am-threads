@@ -56,7 +56,45 @@ function regex(raw: string | undefined): RegExp | null {
 }
 
 /** Pages from one source published (or changed) since `since`, newest first */
-export async function discover(source: ManagerSource, since: Date, opts: { maxChildSitemaps?: number } = {}): Promise<Discovered[]> {
+/** Sitemap addresses for a site: from robots.txt, else the two usual places */
+export async function sitemapsOf(home: string): Promise<string[]> {
+  const origin = new URL(home).origin
+  try {
+    const robots = await getText(`${origin}/robots.txt`, 10000, 200_000)
+    const named = Array.from(robots.matchAll(/^\s*sitemap:\s*(\S+)/gim)).map(m => m[1].trim())
+    if (named.length) return Array.from(new Set(named))
+  } catch {}
+  for (const path of ['/sitemap.xml', '/sitemap_index.xml']) {
+    try { const xml = await getText(origin + path, 10000, 200_000); if (/<(urlset|sitemapindex)\b/i.test(xml)) return [origin + path] } catch {}
+  }
+  return []
+}
+
+/**
+ * Read sitemaps, following sitemap indexes two levels down. Child sitemaps changed before `since`
+ * are skipped, as are children whose own address marks them as products, funds or people.
+ */
+async function readSitemapTree(roots: string[], since: Date, exclude: RegExp | null, maxChildren: number): Promise<string[]> {
+  const out: string[] = []
+  let budget = maxChildren
+  const visit = async (url: string, depth: number) => {
+    if (budget-- <= 0) return
+    let xml: string
+    try { xml = await getText(url) } catch { return }
+    const kids = parseSitemapIndex(xml)
+    if (!kids.length) { out.push(xml); return }
+    if (depth >= 2) return
+    const wanted = kids
+      .filter(c => !c.lastmod || c.lastmod >= since)
+      .filter(c => !(exclude && exclude.test(c.loc)) && !/(product|fund|people|author|tag|image|video-sitemap|careers?)/i.test(c.loc.split('/').pop() || ''))
+      .sort((a, b) => (b.lastmod?.getTime() || 0) - (a.lastmod?.getTime() || 0))
+    for (const c of wanted) { if (budget <= 0) break; await visit(c.loc, depth + 1) }
+  }
+  for (const r of roots) await visit(r, 0)
+  return out
+}
+
+export async function discover(source: ManagerSource, since: Date, opts: { maxChildSitemaps?: number; maxPages?: number } = {}): Promise<Discovered[]> {
   const include = regex(source.pageInclude)
   const exclude = regex(source.pageExclude)
   const keep = (url: string) => (!include || include.test(url)) && !(exclude && exclude.test(url))
@@ -77,22 +115,11 @@ export async function discover(source: ManagerSource, since: Date, opts: { maxCh
 
   if (source.kind === 'page') return [{ ...base, url: source.feed_url, lastmod: null }]
 
-  // Sitemap, or sitemap index
-  const top = await getText(source.feed_url)
-  const children = parseSitemapIndex(top)
-  const xmls: string[] = []
-  if (children.length) {
-    // Children changed since the cutoff (or undated), most recent first. Children whose own address
-    // shows they are for another kind of page (products, people) are skipped when a pattern says so.
-    const wanted = children
-      .filter(c => !c.lastmod || c.lastmod >= since)
-      .filter(c => !(exclude && exclude.test(c.loc)))
-      .sort((a, b) => (b.lastmod?.getTime() || 0) - (a.lastmod?.getTime() || 0))
-      .slice(0, opts.maxChildSitemaps || 25)
-    for (const c of wanted) {
-      try { xmls.push(await getText(c.loc)) } catch { /* one bad child should not lose the rest */ }
-    }
-  } else xmls.push(top)
+  // Sitemaps: named by the source, or found through the site's robots.txt
+  const roots = source.kind === 'robots' ? await sitemapsOf(source.feed_url) : [source.feed_url]
+  if (!roots.length) throw new Error('no sitemap found (robots.txt names none; /sitemap.xml and /sitemap_index.xml missing)')
+  const xmls = await readSitemapTree(roots, since, exclude, opts.maxChildSitemaps || 40)
+  if (!xmls.length) throw new Error(`sitemap not readable (${roots[0]})`)
 
   const seen = new Set<string>()
   const out: Discovered[] = []
@@ -105,5 +132,8 @@ export async function discover(source: ManagerSource, since: Date, opts: { maxCh
       out.push({ ...base, url: e.loc, lastmod: e.lastmod?.toISOString() || null, ...(e.title ? { title: e.title } : {}) })
     }
   }
-  return out.sort((a, b) => (b.lastmod || '').localeCompare(a.lastmod || ''))
+  // A whole-site sitemap can list thousands of undated pages; keep the dated, newest first, then a
+  // bounded number of undated ones (their own dates are checked when read)
+  out.sort((a, b) => (b.lastmod || '').localeCompare(a.lastmod || ''))
+  return out.slice(0, opts.maxPages || 3000)
 }

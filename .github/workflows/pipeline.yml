@@ -12,6 +12,10 @@ on:
         description: 'Look back this many days when discovering (365 for a backfill)'
         required: false
         default: '14'
+      wave:
+        description: 'Which houses: 1, 2 or all'
+        required: false
+        default: '1'
       pages:
         description: 'Most read/tag calls per step'
         required: false
@@ -30,8 +34,12 @@ jobs:
     steps:
       - name: Discover
         run: |
-          curl -sS -L -X POST "$SITE/api/discover?days=${{ github.event.inputs.days || '14' }}" -H "$AUTH" --max-time 300 -o discover.json || true
-          cat discover.json; echo
+          offset=0
+          while [ -n "$offset" ] && [ "$offset" != "null" ]; do
+            curl -sS -L -X POST "$SITE/api/discover?days=${{ github.event.inputs.days || '14' }}&wave=${{ github.event.inputs.wave || '1' }}&offset=$offset&batch=12" -H "$AUTH" --max-time 300 -o discover.json || break
+            cat discover.json; echo
+            offset=$(jq -r '.next_offset' discover.json)
+          done
       - name: Read and measure
         run: |
           for i in $(seq 1 ${{ github.event.inputs.pages || '20' }}); do

@@ -1,13 +1,15 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { discover } from '@/lib/collect'
 import { db, logRun, unauthorised } from '@/lib/db'
-import { ACTIVE_SOURCES, MANAGERS, SOURCES, editionOf } from '@/lib/sources'
+import { ROSTER } from '@/lib/roster'
+import { MANAGERS, SOURCES, editionOf, sourcesForWave } from '@/lib/sources'
 
 export const maxDuration = 300
 
 // Step 1 of 3. Lists each source's pages since `days` ago and queues new addresses in `editions`.
-// Nothing is read yet. ?days=365 for a backfill; ?source=<id> for one source; ?dry=1 reports what
-// would be queued without storing anything (used to check unverified sources).
+// Nothing is read yet. ?days=365 for a backfill; ?wave=1|2|all (default 1); ?source=<id> for one
+// source; ?dry=1 reports what would be found without storing anything (used to check sources).
+// Paged over sources: ?offset=0&batch=12, and the reply gives next_offset until it is null.
 export async function POST(req: NextRequest) {
   const denied = unauthorised(req); if (denied) return denied
   const started = Date.now()
@@ -15,16 +17,22 @@ export async function POST(req: NextRequest) {
   const days = Math.min(Number(q.get('days') || 14), 730)
   const dry = q.get('dry') === '1'
   const only = q.get('source')
+  const waveParam = q.get('wave') || '1'
+  const wave = waveParam === 'all' ? 'all' : waveParam === '2' ? 2 : 1
+  const offset = Number(q.get('offset') || 0)
+  const batch = Math.min(Number(q.get('batch') || 12), 40)
+  const pool = sourcesForWave(wave).filter(s => !only || s.id === only)
+  const page = pool.slice(offset, offset + batch)
   const since = new Date(Date.now() - days * 864e5)
   const sb = db()
 
-  if (!dry) {
-    await sb.from('managers').upsert(MANAGERS.map(({ id, name, parent_group, home }) => ({ id, name, parent_group, home })), { onConflict: 'id' })
+  if (!dry && offset === 0) {
+    await sb.from('managers').upsert(MANAGERS.map(({ id, name, parent_group, home, wave }) => ({ id, name, parent_group, home, wave, ranking_rank: ROSTER.find(r => r.houses.includes(id) && r.status !== 'merged')?.rank ?? null })), { onConflict: 'id' })
     await sb.from('sources').upsert(SOURCES.map(s => ({ id: s.id, manager_id: s.manager, name: s.name, feed_url: s.feed_url, kind: s.kind || 'rss', active: s.active !== false, verified: s.verified || null })), { onConflict: 'id' })
   }
 
   const report: Record<string, { found?: number; queued?: number; sample?: string[]; error?: string }> = {}
-  await Promise.all(ACTIVE_SOURCES.filter(s => !only || s.id === only).map(async source => {
+  await Promise.all(page.map(async source => {
     try {
       const found = await discover(source, since)
       if (dry) { report[source.id] = { found: found.length, sample: found.slice(0, 5).map(f => f.url) }; return }
@@ -45,7 +53,8 @@ export async function POST(req: NextRequest) {
     }
   }))
 
-  const stats = { days, dry, sources: report }
+  const next_offset = offset + batch < pool.length ? offset + batch : null
+  const stats = { days, dry, wave, offset, next_offset, total_sources: pool.length, sources: report }
   if (!dry) await logRun('discover', started, stats)
   return NextResponse.json(stats)
 }

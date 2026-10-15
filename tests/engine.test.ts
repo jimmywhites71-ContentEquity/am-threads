@@ -4,7 +4,8 @@ import { readability, syllables } from '../lib/readability'
 import { extractFromHtml, inferFormat } from '../lib/extract'
 import { pieceKey, slugOf } from '../lib/dedupe'
 import { parseSitemapIndex } from '../lib/collect'
-import { editionOf } from '../lib/sources'
+import { MANAGERS, SOURCES, editionOf, sourcesForWave } from '../lib/sources'
+import { ROSTER } from '../lib/roster'
 import { normaliseTags } from '../lib/classifier'
 import { ALL_THEMES, ASSET_CLASSES, REGION_FACETS, SUB_ASSET_KEYS, THEME_PARENTS, VEHICLE_FACETS } from '../lib/taxonomy'
 
@@ -134,4 +135,24 @@ test('tags outside the lists are dropped, and Quality is equities only', () => {
   const eq = normaliseTags({ asset_classes: ['Equities'], primary_theme: 'Quality', secondary_themes: ['Value'] })
   assert.equal(eq.primary_theme, 'Quality')
   assert.deepEqual(eq.secondary_themes, ['Value'])
+})
+
+test('the roster covers ranks 1-100 and every tracked house exists', () => {
+  const ranks = ROSTER.filter(r => r.rank !== null).map(r => r.rank)
+  assert.deepEqual(ranks, Array.from({ length: 100 }, (_, i) => i + 1))
+  const ids = new Set(MANAGERS.map(m => m.id))
+  assert.equal(ids.size, MANAGERS.length, 'house ids unique')
+  for (const r of ROSTER) for (const h of r.houses) assert.ok(ids.has(h), `${r.group} -> ${h}`)
+  for (const m of MANAGERS) assert.ok(ROSTER.some(r => r.houses.includes(m.id)), `${m.id} is on the roster`)
+  for (const m of MANAGERS) assert.ok(SOURCES.some(s => s.manager === m.id), `${m.id} has a source`)
+  for (const r of ROSTER) if (r.status === 'excluded') assert.ok(r.note, `${r.group} exclusion has a reason`)
+  assert.ok(sourcesForWave(1).length > 50)
+  assert.ok(sourcesForWave(2).length >= 10)
+})
+
+test('generic address rules give region and channel', () => {
+  assert.deepEqual(editionOf('invesco', 'https://www.invesco.com/uk/en/institutional/insights/x.html'), { region: 'UK', channel: 'institutional' })
+  assert.deepEqual(editionOf('troweprice', 'https://www.troweprice.com/financial-intermediary/uk/en/insights/articles/x.html'), { region: 'UK', channel: 'wholesale' })
+  assert.deepEqual(editionOf('franklin', 'https://www.franklintempleton.com/articles/2026/x'), { region: 'Global', channel: 'all' })
+  assert.deepEqual(editionOf('nb', 'https://www.nb.com/en/us/insights/x'), { region: 'US', channel: 'all' })
 })

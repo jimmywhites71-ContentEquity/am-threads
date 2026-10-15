@@ -12,6 +12,8 @@ create table if not exists public.managers (
   name text not null,
   parent_group text,
   home text,
+  wave integer not null default 1,     -- 1 tracked from the start, 2 once wave 1 is stable
+  ranking_rank integer,                -- the group's rank in the TAI / P&I 500 (lib/roster.ts)
   created_at timestamptz default now()
 );
 
