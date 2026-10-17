@@ -11,9 +11,9 @@ export const maxDuration = 300
 // so "Sonnet again" shows how consistent the baseline is with itself: Haiku should be judged
 // against that, not against 100%.
 
-const SETUPS = [
+const SETUPS: { name: string; model: string; batch?: number }[] = [
   { name: 'Sonnet 5.5 again (baseline consistency)', model: 'claude-sonnet-5-5' },
-  { name: 'Haiku 5.5', model: 'claude-haiku-5-5' },
+  { name: 'Haiku 5.5', model: 'claude-haiku-5-5', batch: 10 },
 ]
 
 const jaccard = (a: string[], b: string[]) => {
@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
   const sb = db()
   const { data } = await sb.from('pieces')
     .select('id, manager_id, title, summary, format, asset_classes, sub_asset_classes, primary_theme, secondary_themes, subject_regions, explicit_call, piece_text(text)')
-    .eq('status', 'read').not('taxonomy_version', 'is', null).order('published_at', { ascending: false }).limit(1500)
+    .eq('status', 'read').not('taxonomy_version', 'is', null).order('published_at', { ascending: false }).limit(4000)
   const perHouse = new Map<string, number>()
   const pieces = (data || []).filter((p: any) => { const c = perHouse.get(p.manager_id) || 0; if (c >= 3) return false; perHouse.set(p.manager_id, c + 1); return true }).slice(0, n)
   const inputs = pieces.map((p: any) => ({
@@ -44,7 +44,8 @@ export async function GET(req: NextRequest) {
   let totalCost = 0
   for (const s of SETUPS) {
     const usage: Usage = {}
-    const { tags } = await tagPieces(inputs, { model: s.model, usage, deadline: started + 270_000 })
+    const { tags, errors } = await tagPieces(inputs, { model: s.model, usage, batch: s.batch, deadline: started + 270_000 })
+    if (errors.length) lines.push(`|  ↳ errors | ${errors.slice(0, 2).join('; ').replace(/\|/g, '/')} | | | | | | |`)
     const cost = costOf(usage); totalCost += cost
     let ac = 0, pt = 0, th = 0, rg = 0, call = 0, k = 0
     for (const p of pieces as any[]) {
