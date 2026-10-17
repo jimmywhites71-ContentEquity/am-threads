@@ -1,0 +1,28 @@
+name: Tagging sample
+
+# Files a spread of tagged pieces to the "Tagging sample" issue, for the hand-check.
+on:
+  workflow_dispatch:
+    inputs:
+      n:
+        description: 'How many pieces'
+        required: false
+        default: '100'
+
+permissions:
+  issues: write
+
+jobs:
+  sample:
+    runs-on: ubuntu-latest
+    env:
+      SITE_RAW: ${{ vars.SITE_URL }}
+      AUTH: 'Authorization: Bearer ${{ secrets.PIPELINE_API_KEY }}'
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - run: |
+          SITE="${SITE_RAW%/}"
+          curl -sS -L "$SITE/api/sample?n=${{ github.event.inputs.n }}&per=3" -H "$AUTH" --max-time 60 -o sample.md || echo "Sample could not be read." > sample.md
+          head -c 65000 sample.md > body.md
+          n=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "Tagging sample in:title" --json number,title --jq '[.[] | select(.title == "Tagging sample")][0].number // empty')
+          if [ -n "$n" ]; then gh issue edit "$n" --repo "$GITHUB_REPOSITORY" --body-file body.md; else gh issue create --repo "$GITHUB_REPOSITORY" --title "Tagging sample" --body-file body.md; fi
