@@ -15,7 +15,7 @@ export const TAGGER_MODEL = () => process.env.TAGGER_MODEL || 'claude-sonnet-5-5
 /** Pieces summarised and tagged per UTC day; the rest wait for the next day. Set MAX_PIECES_PER_DAY in Vercel. */
 export const dailyCap = () => Number(process.env.MAX_PIECES_PER_DAY || 300)
 /** Spending stops for the month once this is reached (USD, list prices). Set MONTHLY_BUDGET_USD in Vercel. */
-export const monthlyBudget = () => Number(process.env.MONTHLY_BUDGET_USD || 40)
+export const monthlyBudget = () => Number(process.env.MONTHLY_BUDGET_USD || 10)
 
 export interface Usage { [model: string]: { input: number; cache_write: number; cache_read: number; output: number; calls: number } }
 
