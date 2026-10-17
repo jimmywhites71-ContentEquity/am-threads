@@ -2,6 +2,8 @@ import { NextRequest } from 'next/server'
 import { db, unauthorised } from '@/lib/db'
 import { MANAGERS, SOURCES } from '@/lib/sources'
 import { TAXONOMY_VERSION } from '@/lib/taxonomy'
+import { spendSoFar } from '@/lib/spend'
+import { SUMMARY_MODEL, TAGGER_MODEL, dailyCap, monthlyBudget } from '@/lib/usage'
 
 export const maxDuration = 60
 
@@ -31,6 +33,7 @@ export async function GET(req: NextRequest) {
     count('pieces', q => q.eq('taxonomy_version', TAXONOMY_VERSION).eq('explicit_call', true)),
   ])
   const { data: candidates } = await sb.from('theme_candidates').select('*').limit(10)
+  const spend = await spendSoFar(sb)
   const pct = (a: number, b: number) => b ? `${Math.round((a / b) * 100)}%` : 'n/a'
 
   const lines = [
@@ -38,6 +41,11 @@ export async function GET(req: NextRequest) {
     '',
     `Pieces stored: ${total} (gated ${gated}, thin ${thin}). Reading queue: ${newQ} waiting, ${failed} failed, ${skipped} skipped as too old.`,
     `Tagged to taxonomy ${TAXONOMY_VERSION}: ${tagged} (${pct(tagged, total)}). Of those: with an asset class ${pct(withAsset, tagged)}, with a primary theme ${pct(withTheme, tagged)}, making an explicit call ${pct(withCall, tagged)}.`,
+    '',
+    '## Costs (Anthropic API, list prices)',
+    `- Today (UTC): $${spend.dayUsd.toFixed(2)}; ${spend.taggedToday} of ${dailyCap()} pieces allowed today.`,
+    `- This month: $${spend.monthUsd.toFixed(2)} of a $${monthlyBudget()} budget${spend.monthUsd >= monthlyBudget() ? ' — BUDGET REACHED, tagging paused until next month' : ''}.`,
+    `- Models: summaries ${SUMMARY_MODEL()}, tagging ${TAGGER_MODEL()}. Limits are set in Vercel (MAX_PIECES_PER_DAY, MONTHLY_BUDGET_USD).`,
     '',
     '## Pieces by manager (all / last 7 days)',
     ...perManager.map(({ m, n, week }) => `- ${m.name}: ${n} / ${week}`),

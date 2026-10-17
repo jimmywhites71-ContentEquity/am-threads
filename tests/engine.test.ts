@@ -172,3 +172,11 @@ test('news-index headlines that are people or legal pages are dropped', async ()
   assert.equal(isRealHeadline('Fixed Income Outlook 4Q 2026: Walking the Line Between Rates and Inflation Risk'), true)
   assert.equal(isRealHeadline('Scorching summer could heat up the energy transition'), true)
 })
+
+test('API cost is worked out from tokens at list prices', async () => {
+  const { addUsage, costOf } = await import('../lib/usage')
+  const u = {}
+  addUsage(u, 'claude-sonnet-5-5', { usage: { input_tokens: 1_000_000, output_tokens: 100_000 } })
+  addUsage(u, 'claude-haiku-5-5', { usage: { input_tokens: 2_000_000, output_tokens: 200_000 } })
+  assert.equal(costOf(u), 2 + 1 + 0.2 + 0.1)
+})

@@ -12,6 +12,7 @@ import {
   ASSET_CLASSES, ASSET_CLASS_NAMES, CONTENT_PURPOSES, OVERLAP_RULES, REGION_FACETS, SUB_ASSET_KEYS,
   TAXONOMY_VERSION, THEME_PARENTS, TOPIC_THEMES, VEHICLE_FACETS, pick, type ContentPurpose,
 } from './taxonomy'
+import { SUMMARY_MODEL, TAGGER_MODEL, addUsage, type Usage } from './usage'
 
 function client() {
   const workspace = process.env.ANTHROPIC_WORKSPACE_ID?.trim()
@@ -21,7 +22,7 @@ const textOf = (m: any) => ((m?.content || []) as any[]).filter(b => b?.type ===
 
 // ── 1. Summary ───────────────────────────────────────────────────────────
 
-export async function summarise(p: { title: string; text: string; manager: string }): Promise<{ summary: string; error?: string }> {
+export async function summarise(p: { title: string; text: string; manager: string }, usage?: Usage): Promise<{ summary: string; error?: string }> {
   // Too little text to summarise honestly: a summary would be invented from the title
   if ((p.text.match(/\S+/g) || []).length < 150) return { summary: '' }
   const prompt = `Summarise this piece published by ${p.manager}, an asset manager, for a reader who tracks what asset managers publish.
@@ -31,7 +32,9 @@ Text: ${p.text.slice(0, 6000)}
 
 Write 2-3 sentences: what the piece argues or reports, and any explicit view or call it makes. Attribute the view to ${p.manager}. Plain, precise British English; no filler; no investment advice of your own. Reply with the summary only.`
   try {
-    const m = await client().messages.create({ model: process.env.SUMMARY_MODEL || 'claude-haiku-4-5-20251001', max_tokens: 300, messages: [{ role: 'user', content: prompt }] }, { timeout: 60_000, maxRetries: 1 })
+    const model = SUMMARY_MODEL()
+    const m = await client().messages.create({ model, max_tokens: 300, messages: [{ role: 'user', content: prompt }] }, { timeout: 60_000, maxRetries: 1 })
+    if (usage) addUsage(usage, model, m)
     return { summary: textOf(m).trim() }
   } catch (err: any) {
     return { summary: '', error: `${err?.status || ''} ${String(err?.message || err).slice(0, 120)}`.trim() }
@@ -77,7 +80,7 @@ EXPLICIT CALL: true only if the piece states a directional view an investor coul
 THEME CANDIDATE: if the piece is substantially about something no theme covers, name it in 2-4 words; otherwise null.`
 }
 
-async function tagBatch(c: Anthropic, model: string, batch: TagInput[]): Promise<Map<string, Tags>> {
+async function tagBatch(c: Anthropic, model: string, batch: TagInput[], usage?: Usage): Promise<Map<string, Tags>> {
   const lines = batch.map((p, i) => `${i + 1}. [${p.manager}, ${p.format}] ${p.title}\n   Summary: ${p.summary.replace(/\s+/g, ' ').slice(0, 700) || '(none)'}\n   Opening: ${p.opening.replace(/\s+/g, ' ').slice(0, 500)}`).join('\n')
   const prompt = `You classify content published by asset managers for a competitive-intelligence dataset. Be strict: tag what each piece is substantially about, not what it mentions.
 
@@ -90,6 +93,7 @@ Reply with one line of JSON per piece, in order, nothing else:
 {"n":1,"asset_classes":[],"sub_asset_classes":[],"primary_theme":null,"secondary_themes":[],"regions":[],"vehicles":[],"content_purpose":"market commentary","explicit_call":false,"call_text":null,"theme_candidate":null}`
   const direct = /sonnet-5-5/.test(model) ? { thinking: { type: 'between_tools' } } : {}
   const m = await c.messages.create({ model, max_tokens: 6000, ...direct, messages: [{ role: 'user', content: prompt }] } as any, { timeout: 180_000, maxRetries: 1 })
+  if (usage) addUsage(usage, model, m)
   const out = new Map<string, Tags>()
   for (const line of textOf(m).split('\n')) {
     const j = /\{.*\}/.exec(line)
@@ -133,9 +137,9 @@ export function normaliseTags(row: any): Tags {
   }
 }
 
-export async function tagPieces(pieces: TagInput[], opts: { batch?: number; parallel?: number; deadline?: number } = {}): Promise<{ tags: Map<string, Tags>; errors: string[] }> {
+export async function tagPieces(pieces: TagInput[], opts: { batch?: number; parallel?: number; deadline?: number; usage?: Usage } = {}): Promise<{ tags: Map<string, Tags>; errors: string[] }> {
   const c = client()
-  const model = process.env.TAGGER_MODEL || 'claude-sonnet-5-5'
+  const model = TAGGER_MODEL()
   const size = opts.batch || 15
   const batches: TagInput[][] = []
   for (let i = 0; i < pieces.length; i += size) batches.push(pieces.slice(i, i + size))
@@ -144,7 +148,7 @@ export async function tagPieces(pieces: TagInput[], opts: { batch?: number; para
   await Promise.all(Array.from({ length: Math.min(opts.parallel || 3, batches.length) }, async () => {
     for (let b = batches.shift(); b; b = batches.shift()) {
       if (opts.deadline && Date.now() > opts.deadline) break
-      try { for (const [k, v] of await tagBatch(c, model, b)) tags.set(k, v) }
+      try { for (const [k, v] of await tagBatch(c, model, b, opts.usage)) tags.set(k, v) }
       catch (err: any) { errors.push(`${err?.status || ''} ${String(err?.message || err).slice(0, 120)}`.trim()) }
     }
   }))

@@ -16,6 +16,11 @@ export async function POST(req: NextRequest) {
   const started = Date.now()
   const q = req.nextUrl.searchParams
   const days = Math.min(Number(q.get('days') || 14), 730)
+  // A look-back beyond 30 days is a backfill and can mean thousands of pieces to tag: it needs
+  // James's approval, given by running the pipeline with "approve_backfill" set to yes
+  if (days > 30 && q.get('dry') !== '1' && q.get('approve') !== 'yes') {
+    return NextResponse.json({ error: `A ${days}-day backfill needs approval: run the pipeline with approve_backfill = yes.`, next_offset: null }, { status: 403 })
+  }
   const dry = q.get('dry') === '1'
   const only = q.get('source')
   const waveParam = q.get('wave') || '1'
