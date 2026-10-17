@@ -78,6 +78,17 @@ const NON_ENGLISH = /\/(de|fr|es|it|nl|ja|jp|zh|ko|pt|sv|da|fi|no|nb|pl|cs|hu|el
 
 /** An index or hub page rather than a piece: its last segment is a generic word with no slug */
 const GENERIC_LAST = /^(insights?|thinking|research|articles?|perspectives?|collections?|[a-z]+-collections|publications?|podcasts?|videos?|webinars?|news|news-and-insights|commentary|outlooks?|index|overview|library|topics?|all|latest|blog|strategy|views?|ideas)$/i
+/**
+ * A news-index headline that is a real piece: at least four words, and not a person's profile,
+ * a legal or fund-document page, or the site's own index pages (seen 17 Oct 2026).
+ */
+const NOT_A_PIECE = /\b(terms|conditions|privacy|cookies?|disclaimer|definitions|legal|factsheet|fact sheet|kiid|kid|prospectus|annual report|accounts|careers?|vacanc|job|contact us|about us|our people|our team|login|sign in|subscribe|newsletter sign|fund prices?|literature|document library|press release|appoints|appointment|hires|joins)\b/i
+export function isRealHeadline(title: string): boolean {
+  const t = title.trim()
+  if (t.split(/\s+/).length < 4) return false
+  return !NOT_A_PIECE.test(t)
+}
+
 export function isIndexPage(url: string): boolean {
   let last = ''
   try { last = new URL(url).pathname.split('/').filter(Boolean).pop() || '' } catch { return false }
@@ -173,6 +184,7 @@ export async function discover(source: ManagerSource, since: Date, opts: { maxCh
         lastmod: it.isoDate || (it.pubDate ? new Date(it.pubDate).toISOString() : null),
       }))
       .filter(d => !d.lastmod || new Date(d.lastmod) >= since)
+      .filter(d => !source.headlineOnly || isRealHeadline(d.title || ''))
     if (diag) { diag.entries = feed.items.length; diag.in_window = items.length; diag.unique_pieces = new Set(items.map(i => (i.title || '').toLowerCase())).size }
     return items
   }

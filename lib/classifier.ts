@@ -22,7 +22,8 @@ const textOf = (m: any) => ((m?.content || []) as any[]).filter(b => b?.type ===
 // ── 1. Summary ───────────────────────────────────────────────────────────
 
 export async function summarise(p: { title: string; text: string; manager: string }): Promise<{ summary: string; error?: string }> {
-  if (p.text.trim().length < 300) return { summary: '' }
+  // Too little text to summarise honestly: a summary would be invented from the title
+  if ((p.text.match(/\S+/g) || []).length < 150) return { summary: '' }
   const prompt = `Summarise this piece published by ${p.manager}, an asset manager, for a reader who tracks what asset managers publish.
 
 Title: ${p.title}

@@ -164,3 +164,11 @@ test('hub pages and non-English editions are left out at discovery', async () =>
   assert.equal(isIndexPage('https://www.kkr.com/insights/finding-equilibrium'), false)
   assert.equal(isIndexPage('https://www.mfs.com/en-de/investment-professional/insights/video-why-we-invest/1082004392.html'), false)
 })
+
+test('news-index headlines that are people or legal pages are dropped', async () => {
+  const { isRealHeadline } = await import('../lib/collect')
+  assert.equal(isRealHeadline('Abhik Kumar'), false)
+  assert.equal(isRealHeadline('ICVC Terms and Conditions'), false)
+  assert.equal(isRealHeadline('Fixed Income Outlook 4Q 2026: Walking the Line Between Rates and Inflation Risk'), true)
+  assert.equal(isRealHeadline('Scorching summer could heat up the energy transition'), true)
+})

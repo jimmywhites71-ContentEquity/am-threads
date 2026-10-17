@@ -119,7 +119,7 @@ export function inferFormat(url: string, title: string, words: number, v: Pick<V
   const u = url.toLowerCase(), t = title.toLowerCase()
   if (/\/podcasts?\//.test(u) || /\bpodcast\b|\bepisode\b/.test(t) || (v.audio_embed && words < 1200)) return 'podcast'
   if (/\/webinars?\/|\/events?\//.test(u) || /\bwebinar\b|\bwebcast\b/.test(t)) return 'webinar'
-  if (/\/videos?\//.test(u) || (v.video_embed && words < 400)) return 'video'
+  if (/\/videos?[\/-]/.test(u) || /^video\b|\bvideo transcript\b|\[video\]/.test(t) || (v.video_embed && words < 400)) return 'video'
   if (/outlook/.test(u) || /\boutlook\b|\bmid-year\b|\byear ahead\b/.test(t)) return 'outlook'
   if (/chart-of-the-|\/charts?\//.test(u) && words < 400) return 'chart'
   if (isPdf || /\/(research|whitepapers?|white-papers?|papers?)\//.test(u) || words >= 3000) return 'research paper'

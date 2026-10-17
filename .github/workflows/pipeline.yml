@@ -34,6 +34,10 @@ jobs:
     steps:
       - name: Site address
         run: echo "SITE=${SITE_RAW%/}" >> "$GITHUB_ENV"
+      - name: Housekeeping
+        run: |
+          curl -sS -L -X POST "$SITE/api/cleanup" -H "$AUTH" --max-time 120 -o cleanup.json || true
+          echo "cleanup: $(head -c 600 cleanup.json 2>/dev/null)" | tee -a run.log
       - name: Discover
         run: |
           offset=0
