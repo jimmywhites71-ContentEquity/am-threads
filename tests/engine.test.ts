@@ -156,3 +156,11 @@ test('generic address rules give region and channel', () => {
   assert.deepEqual(editionOf('franklin', 'https://www.franklintempleton.com/articles/2026/x'), { region: 'Global', channel: 'all' })
   assert.deepEqual(editionOf('nb', 'https://www.nb.com/en/us/insights/x'), { region: 'US', channel: 'all' })
 })
+
+test('hub pages and non-English editions are left out at discovery', async () => {
+  const { isIndexPage } = await import('../lib/collect')
+  assert.equal(isIndexPage('https://www.bailliegifford.com/en/uk/institutional-investor/insights/'), true)
+  assert.equal(isIndexPage('https://www.troweprice.com/financial-intermediary/at/de/thinking/collections.html'), true)
+  assert.equal(isIndexPage('https://www.kkr.com/insights/finding-equilibrium'), false)
+  assert.equal(isIndexPage('https://www.mfs.com/en-de/investment-professional/insights/video-why-we-invest/1082004392.html'), false)
+})

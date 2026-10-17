@@ -1,5 +1,5 @@
 import { NextRequest, NextResponse } from 'next/server'
-import { discover } from '@/lib/collect'
+import { discover, type Diagnostics } from '@/lib/collect'
 import { db, logRun, unauthorised } from '@/lib/db'
 import { ROSTER } from '@/lib/roster'
 import { MANAGERS, SOURCES, editionOf, sourcesForWave } from '@/lib/sources'
@@ -31,11 +31,16 @@ export async function POST(req: NextRequest) {
     await sb.from('sources').upsert(SOURCES.map(s => ({ id: s.id, manager_id: s.manager, name: s.name, feed_url: s.feed_url, kind: s.kind || 'rss', active: s.active !== false, verified: s.verified || null })), { onConflict: 'id' })
   }
 
-  const report: Record<string, { found?: number; queued?: number; sample?: string[]; error?: string }> = {}
+  const report: Record<string, { found?: number; unique?: number; queued?: number; sample?: string[]; error?: string; diag?: Partial<Diagnostics> }> = {}
   await Promise.all(page.map(async source => {
+    const diag: Diagnostics = { roots: [], unreadable: [], entries: 0, in_window: 0, undated: 0, unmatched_sample: [] }
     try {
-      const found = await discover(source, since)
-      if (dry) { report[source.id] = { found: found.length, sample: found.slice(0, 5).map(f => f.url) }; return }
+      const found = await discover(source, since, { diag })
+      if (dry) {
+        report[source.id] = { found: found.length, unique: diag.unique_pieces, sample: found.slice(0, 3).map(f => f.url),
+          ...(found.length ? {} : { diag: { robots: diag.robots, roots: diag.roots.slice(0, 3), entries: diag.entries, in_window: diag.in_window, unmatched_sample: diag.unmatched_sample, unreadable: diag.unreadable.slice(0, 3) } }) }
+        return
+      }
       let queued = 0
       for (let i = 0; i < found.length; i += 500) {
         const rows = found.slice(i, i + 500).map(f => ({ url: f.url, source_id: f.source_id, manager_id: f.manager, lastmod: f.lastmod, ...editionOf(f.manager, f.url) }))
@@ -47,8 +52,8 @@ export async function POST(req: NextRequest) {
       report[source.id] = { found: found.length, queued }
       await sb.from('sources').update({ last_run_at: new Date().toISOString(), last_found: found.length, last_error: null, ...(found.length ? { verified: new Date().toISOString().slice(0, 10) } : {}) }).eq('id', source.id)
     } catch (err: any) {
-      const error = String(err?.message || err).slice(0, 200)
-      report[source.id] = { error }
+      const error = String(err?.message || err).slice(0, 300)
+      report[source.id] = { error, ...(dry ? { diag: { robots: diag.robots, roots: diag.roots.slice(0, 3), unreadable: diag.unreadable.slice(0, 3) } } : {}) }
       if (!dry) await sb.from('sources').update({ last_run_at: new Date().toISOString(), last_error: error }).eq('id', source.id)
     }
   }))

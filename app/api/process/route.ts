@@ -50,6 +50,17 @@ export async function POST(req: NextRequest) {
   await Promise.all(Array.from(byManager.values()).map(async list => {
     for (const e of list!) {
       if (Date.now() > deadline) break
+      // Another edition of a piece already read (same house, same slug): record the edition's
+      // region and channel without fetching the page again
+      const known = await sb.from('pieces').select('id, regions, channels').eq('piece_key', pieceKey(e.manager_id, e.url)).maybeSingle()
+      if (known.data) {
+        const regions = Array.from(new Set([...(known.data.regions || []), e.region].filter(Boolean)))
+        const channels = Array.from(new Set([...(known.data.channels || []), e.channel].filter(Boolean)))
+        await sb.from('pieces').update({ regions, channels }).eq('id', known.data.id)
+        await sb.from('editions').update({ piece_id: known.data.id, status: 'read', read_at: new Date().toISOString(), error: 'edition of a piece already read' }).eq('url', e.url)
+        stats.editions_added++
+        continue
+      }
       const { page, reason, status } = await readPage(e.url)
       if (!page) {
         stats.failed++; note(reason || 'unreadable')
