@@ -38,6 +38,7 @@ jobs:
         run: |
           offset=0
           while [ -n "$offset" ] && [ "$offset" != "null" ]; do
+            echo "discover offset $offset" >> run.log
             curl -sS -L -X POST "$SITE/api/discover?days=${{ github.event.inputs.days || '14' }}&wave=${{ github.event.inputs.wave || '1' }}&offset=$offset&batch=12" -H "$AUTH" --max-time 300 -o discover.json || break
             cat discover.json; echo
             offset=$(jq -r '.next_offset' discover.json)
@@ -48,26 +49,28 @@ jobs:
           for i in $(seq 1 ${{ github.event.inputs.pages || '20' }}); do
             curl -sS -L -X POST "$SITE/api/process?limit=80" -H "$AUTH" --max-time 300 -o p.json || true
             if jq -e '.taken' p.json >/dev/null 2>&1; then
-              fails=0; jq -c '{taken, pieces_new, editions_added, failed, skipped_old, remaining, seconds}' p.json
+              fails=0; jq -c '{taken, pieces_new, editions_added, failed, skipped_old, remaining, seconds}' p.json | tee -a run.log
               [ "$(jq -r '.remaining // 0' p.json)" -gt 0 ] && [ "$(jq -r '.taken // 0' p.json)" -gt 0 ] || break
             else
-              fails=$((fails+1)); echo "Call $i failed: $(head -c 200 p.json 2>/dev/null)"
+              fails=$((fails+1)); echo "read call $i failed: $(head -c 200 p.json 2>/dev/null)" | tee -a run.log
               [ $fails -ge 3 ] && break
             fi
           done
+          echo "read step ended after call $i" >> run.log
       - name: Summarise and tag
         run: |
           fails=0
           for i in $(seq 1 ${{ github.event.inputs.pages || '20' }}); do
             curl -sS -L -X POST "$SITE/api/classify?limit=60" -H "$AUTH" --max-time 300 -o c.json || true
             if jq -e '.taken' c.json >/dev/null 2>&1; then
-              fails=0; jq -c '{taken, summarised, tagged, remaining, seconds, errors: (.errors[0:2])}' c.json
+              fails=0; jq -c '{taken, summarised, tagged, remaining, seconds, errors: (.errors[0:2])}' c.json | tee -a run.log
               [ "$(jq -r '.remaining // 0' c.json)" -gt 0 ] && [ "$(jq -r '.taken // 0' c.json)" -gt 0 ] || break
             else
-              fails=$((fails+1)); echo "Call $i failed: $(head -c 200 c.json 2>/dev/null)"
+              fails=$((fails+1)); echo "tag call $i failed: $(head -c 200 c.json 2>/dev/null)" | tee -a run.log
               [ $fails -ge 3 ] && break
             fi
           done
+          echo "tag step ended after call $i" >> run.log
       - name: Publish status
         if: always()
         continue-on-error: true
@@ -75,6 +78,7 @@ jobs:
           GH_TOKEN: ${{ github.token }}
         run: |
           curl -sS -L "$SITE/api/status" -H "$AUTH" --fail --max-time 60 -o status.md || echo "The status report could not be read on this run." > status.md
+          { echo; echo "## This run"; echo; echo '```'; tail -n 80 run.log 2>/dev/null || echo "(no log)"; echo '```'; } >> status.md
           echo "Run: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID" >> status.md
           n=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "Pipeline status in:title" --json number,title --jq '[.[] | select(.title == "Pipeline status")][0].number // empty')
           if [ -n "$n" ]; then gh issue edit "$n" --repo "$GITHUB_REPOSITORY" --body-file status.md; else gh issue create --repo "$GITHUB_REPOSITORY" --title "Pipeline status" --body-file status.md; fi
