@@ -22,7 +22,7 @@ export async function POST(req: NextRequest) {
 
   const { data: rows, error } = await sb.from('pieces')
     .select('id, manager_id, title, summary, format, taxonomy_version, piece_text(text)')
-    .in('status', ['read', 'thin'])
+    .in('status', ['read', 'thin', 'gated'])
     .or(`taxonomy_version.is.null,taxonomy_version.neq.${TAXONOMY_VERSION}`)
     .order('published_at', { ascending: false, nullsFirst: false }).limit(limit)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
@@ -62,7 +62,7 @@ export async function POST(req: NextRequest) {
     if (!upErr) stats.tagged++
   }
 
-  const { count } = await sb.from('pieces').select('id', { count: 'exact', head: true }).in('status', ['read', 'thin'])
+  const { count } = await sb.from('pieces').select('id', { count: 'exact', head: true }).in('status', ['read', 'thin', 'gated'])
     .or(`taxonomy_version.is.null,taxonomy_version.neq.${TAXONOMY_VERSION}`)
   const out = { ...stats, errors: stats.errors.slice(0, 10), remaining: count ?? null, seconds: Math.round((Date.now() - started) / 1000) }
   await logRun('classify', started, out)

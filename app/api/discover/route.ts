@@ -1,6 +1,7 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { discover, type Diagnostics } from '@/lib/collect'
 import { db, logRun, unauthorised } from '@/lib/db'
+import { pieceKey } from '@/lib/dedupe'
 import { ROSTER } from '@/lib/roster'
 import { MANAGERS, SOURCES, editionOf, sourcesForWave } from '@/lib/sources'
 
@@ -42,6 +43,23 @@ export async function POST(req: NextRequest) {
         return
       }
       let queued = 0
+      // Headline-only sources: the site refuses readers, so the piece is stored from the headline
+      // now (status 'gated', tagged from its title) and never fetched
+      if (source.headlineOnly) {
+        for (const f of found) {
+          if (!f.title) continue
+          const key = pieceKey(f.manager, `https://headline/${f.title.toLowerCase().replace(/[^a-z0-9]+/g, '-')}`)
+          const { data: piece } = await sb.from('pieces').upsert({
+            piece_key: key, manager_id: f.manager, title: f.title, url: f.url, published_at: f.lastmod,
+            status: 'gated', gated: true, format: 'article', regions: [], channels: [],
+          }, { onConflict: 'piece_key', ignoreDuplicates: true }).select('id').maybeSingle()
+          await sb.from('editions').upsert({ url: f.url, source_id: f.source_id, manager_id: f.manager, lastmod: f.lastmod, region: 'Global', channel: 'all', status: 'gated', piece_id: piece?.id ?? null, read_at: new Date().toISOString() }, { onConflict: 'url', ignoreDuplicates: true })
+          if (piece) queued++
+        }
+        report[source.id] = { found: found.length, queued }
+        await sb.from('sources').update({ last_run_at: new Date().toISOString(), last_found: found.length, last_error: null }).eq('id', source.id)
+        return
+      }
       for (let i = 0; i < found.length; i += 500) {
         const rows = found.slice(i, i + 500).map(f => ({ url: f.url, source_id: f.source_id, manager_id: f.manager, lastmod: f.lastmod, ...editionOf(f.manager, f.url) }))
         // Existing addresses are left as they are

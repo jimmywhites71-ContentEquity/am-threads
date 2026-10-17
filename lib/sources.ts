@@ -33,6 +33,14 @@ export interface Source {
   maxPerDay?: number
   lookbackDays?: number
   editions?: { match: string; every: 'quarter' | 'month'; title?: string }[]
+  /**
+   * The site refuses automated readers, so only headlines are collected, from a news index
+   * (Google News, searched by site). feed_url may contain {days}. Pieces are stored as headlines
+   * and tagged from their titles; they get no form or readability measures.
+   */
+  headlineOnly?: boolean
+  /** The site's sitemap dates are stale or wrong: treat every entry as undated */
+  ignoreLastmod?: boolean
 }
 
 export type Channel = 'institutional' | 'wholesale' | 'retail' | 'all'
@@ -223,25 +231,68 @@ const S = (manager: string, s: Omit<ManagerSource, 'manager' | 'provider' | 'cat
 const FIRST_SOURCES: ManagerSource[] = [
   S('jpmam', { id: 'jpmam-us-adv', name: 'Insights (US advisers)', feed_url: 'https://am.jpmorgan.com/us/en/asset-management/adv/sitemap.xml', content_type: 'article', kind: 'sitemap', pageInclude: '/adv/insights/[^?#]+', pageExclude: NOT_CONTENT, verified: 'alphathreads' }),
   S('jpmam', { id: 'jpmam-gb-liq', name: 'Insights (UK institutional)', feed_url: 'https://am.jpmorgan.com/gb/en/asset-management/liq/sitemap.xml', content_type: 'article', kind: 'sitemap', pageInclude: '/liq/insights/[^?#]+', pageExclude: NOT_CONTENT, verified: false }),
-  S('amundi', { id: 'amundi-research', name: 'Research Center', feed_url: 'https://research-center.amundi.com/sitemap.xml', content_type: 'article', kind: 'sitemap', pageInclude: '/article/[^?#]+', verified: false }),
+  S('amundi', { id: 'amundi-research', name: 'Research Center', feed_url: 'https://research-center.amundi.com', content_type: 'article', kind: 'robots', pageInclude: '/(article|insights?)/[^?#]+', verified: false }),
   S('schroders', { id: 'schroders-uk-inst', name: 'Insights (UK institutional)', feed_url: 'https://www.schroders.com/en-gb/uk/institutional/sitemap.xml', content_type: 'article', kind: 'sitemap', pageInclude: '/en-gb/uk/institutional/insights/[^/]+/?$', verified: 'alphathreads' }),
   S('fidelity-intl', { id: 'fidelity-uk-pro', name: 'Insights (UK professional)', feed_url: 'https://professionals.fidelity.co.uk/sitemap.xml', content_type: 'article', kind: 'sitemap', pageInclude: '/(perspectives|articles|insights)/[^?#]+', pageExclude: NOT_CONTENT, verified: false }),
-  S('vanguard', { id: 'vanguard-corporate', name: 'Insights', feed_url: 'https://corporate.vanguard.com/sitemap.xml', content_type: 'article', kind: 'sitemap', pageInclude: '/content/corporatesite/us/en/corp/articles/[^?#]+', verified: false }),
-  S('pimco', { id: 'pimco-us', name: 'Insights', feed_url: 'https://www.pimco.com/sitemap.xml', content_type: 'article', kind: 'sitemap', pageInclude: '/us/en/insights/[^/]+/?$', verified: 'alphathreads' }),
+  S('vanguard', { id: 'vanguard-corporate', name: 'Insights', feed_url: 'https://corporate.vanguard.com', content_type: 'article', kind: 'robots', pageInclude: '/(articles|insights|research)/[^?#]+', verified: false }),
+  S('pimco', { id: 'pimco-us', name: 'Insights', feed_url: 'https://www.pimco.com/sitemap.xml', content_type: 'article', kind: 'sitemap', pageInclude: '/(us|gb)/en/insights/[^?#]+', verified: 'alphathreads' }),
   S('wellington', { id: 'wellington-us-inst', name: 'Insights (US institutional)', feed_url: 'https://www.wellington.com/sitemap.xml', content_type: 'article', kind: 'sitemap', pageInclude: '/en-us/institutional/insights/[^?#]+', verified: false }),
-  S('ssga', { id: 'ssga-us-inst', name: 'Insights (US institutional)', feed_url: 'https://www.ssga.com/sitemap.xml', content_type: 'article', kind: 'sitemap', pageInclude: '/us/en/institutional/insights/[^?#]+', verified: false }),
+  S('ssga', { id: 'ssga-us-inst', name: 'Insights', feed_url: 'https://www.ssga.com', content_type: 'article', kind: 'robots', pageInclude: '/(us|uk|ie|int)/en[^/]*/[^?#]*insights/[^?#]+', pageExclude: NOT_CONTENT, verified: false }),
   S('aqr', { id: 'aqr-insights', name: 'Research & Perspectives', feed_url: 'https://www.aqr.com/sitemap.xml', content_type: 'article', kind: 'sitemap', pageInclude: '/Insights/(Research|Perspectives)/[^?#]+', verified: false }),
   S('bridgewater', { id: 'bridgewater-research', name: 'Research & Insights', feed_url: 'https://www.bridgewater.com/sitemap.xml', content_type: 'article', kind: 'sitemap', pageInclude: '/research-and-insights/[^?#]+', verified: false }),
-  S('allianzgi', { id: 'allianzgi-uk', name: 'Insights (UK)', feed_url: 'https://www.allianzgi.com/en-gb/sitemap.xml', content_type: 'article', kind: 'sitemap', pageInclude: '/en-gb/[^?#]*insights/[^?#]+', pageExclude: NOT_CONTENT, verified: false }),
+  S('allianzgi', { id: 'allianzgi-uk', name: 'Insights (UK)', feed_url: 'https://www.allianzgi.com/en-gb/sitemap.xml', content_type: 'article', kind: 'sitemap', pageInclude: '/en(-gb)?/[^?#]*insights/[^?#]+', pageExclude: NOT_CONTENT, verified: false }),
 ]
+
+// House-specific settings found by the source check (17 Oct 2026)
+const OVERRIDES: Record<string, Partial<ManagerSource>> = {
+  'pictet-am': { pageInclude: '/(global-articles|articles|insights|perspectives|market-views)/[^?#]+' },
+  russell: { pageInclude: '/(blog|insights|perspectives)/[^?#]+', ignoreLastmod: true },
+  newton: { ignoreLastmod: true },
+  lgam: { ignoreLastmod: true },
+  'hsbc-am': { ignoreLastmod: true },
+  mercer: { ignoreLastmod: true },
+  'rbc-gam': { ignoreLastmod: true },
+  'macquarie-am': { pageInclude: '/(insights|perspectives)/[^?#]+' },
+  // No sitemap: read their insight listing pages instead
+  schwab: { kind: 'listing', feed_url: 'https://www.schwab.com/learn', pageInclude: '/learn/story/[^?#]+' },
+  'aegon-am': { kind: 'listing', feed_url: 'https://www.aegonam.com/en/insights/', pageInclude: '/insights/[^?#]+' },
+  'metlife-im': { kind: 'listing', feed_url: 'https://investments.metlife.com/insights/', pageInclude: '/insights/[^?#]+' },
+  robeco: { kind: 'listing', feed_url: 'https://www.robeco.com/en-int/insights', pageInclude: '/insights/[^?#]+' },
+}
+
+// Sites that refuse automated readers (403 or 429 to every request, 17 Oct 2026): their own site
+// source is switched off and headlines come from Google News instead. Sites that only timed out
+// keep their site source too, in case it was a slow day.
+const REFUSING = new Set(['fidelity-intl', 'manulife-im', 'neuberger', 'aviva-investors', 'blackstone', 'ninety-one', 'rlam'])
+const HEADLINE_SITES: [manager: string, site: string][] = [
+  ['fidelity-intl', 'fidelityinternational.com'],
+  ['ntam', 'northerntrust.com/asset-management'],
+  ['msim', 'morganstanley.com/im'],
+  ['nuveen', 'nuveen.com'],
+  ['manulife-im', 'manulifeim.com'],
+  ['alliancebernstein', 'alliancebernstein.com'],
+  ['neuberger', 'nb.com'],
+  ['aviva-investors', 'avivainvestors.com'],
+  ['blackstone', 'blackstone.com/insights'],
+  ['ninety-one', 'ninetyone.com'],
+  ['rlam', 'rlam.com'],
+]
+const newsFeed = (site: string) => `https://news.google.com/rss/search?q=site:${encodeURIComponent(site)}+when:{days}d&hl=en-GB&gl=GB&ceid=GB:en`
 
 export const SOURCES: ManagerSource[] = [
   ...FIRST_SOURCES,
   ...HOUSES.map(([id, , home, include]) => S(id, {
     id: `${id}-site`, name: 'Insights (site)', feed_url: home, content_type: 'article', kind: 'robots',
     pageInclude: include || INSIGHT_PATH, pageExclude: NOT_CONTENT, verified: false,
+    ...(OVERRIDES[id] || {}),
+  })),
+  ...HEADLINE_SITES.map(([id, site]) => S(id, {
+    id: `${id}-news`, name: 'Headlines (news index)', feed_url: newsFeed(site), content_type: 'article', kind: 'rss',
+    headlineOnly: true, verified: false,
   })),
 ]
+
+for (const s of SOURCES) if (REFUSING.has(s.manager) && !s.headlineOnly) s.active = false
 
 export const sourcesForWave = (wave: 1 | 2 | 'all') =>
   SOURCES.filter(s => s.active !== false && (wave === 'all' || MANAGER_BY_ID.get(s.manager)!.wave === wave))

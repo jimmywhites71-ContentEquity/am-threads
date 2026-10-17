@@ -93,7 +93,7 @@ export async function sitemapsOf(home: string, diag?: Diagnostics): Promise<stri
   const origin = new URL(home).origin
   try {
     const robots = await getText(`${origin}/robots.txt`, 10000, 200_000)
-    const named = Array.from(robots.matchAll(/^\s*sitemap:\s*(\S+)/gim)).map(m => m[1].trim())
+    const named = Array.from(robots.matchAll(/^\s*sitemap:\s*(\S+)/gim)).map(m => { try { return new URL(m[1].trim(), origin).toString() } catch { return '' } }).filter(Boolean)
     if (named.length) { if (diag) diag.robots = `robots.txt names ${named.length}`; return Array.from(new Set(named)) }
     if (diag) diag.robots = 'robots.txt names no sitemap'
   } catch (err: any) {
@@ -113,23 +113,28 @@ export async function sitemapsOf(home: string, diag?: Diagnostics): Promise<stri
  * Read sitemaps, following sitemap indexes two levels down. Child sitemaps changed before `since`
  * are skipped, as are children whose own address marks them as products, funds or people.
  */
-async function readSitemapTree(roots: string[], since: Date, exclude: RegExp | null, maxChildren: number, diag?: Diagnostics): Promise<string[]> {
+async function readSitemapTree(roots: string[], since: Date | null, exclude: RegExp | null, maxChildren: number, diag?: Diagnostics): Promise<string[]> {
   const out: string[] = []
   let budget = maxChildren
   const visit = async (url: string, depth: number) => {
     if (budget-- <= 0) return
     let xml: string
     try { xml = await getText(url) } catch (err: any) { diag?.unreadable.push(`${url}: ${String(err?.message || err).slice(0, 60)}`); return }
-    const kids = parseSitemapIndex(xml)
+    let kids = parseSitemapIndex(xml).map(k => { try { return { ...k, loc: new URL(k.loc, url).toString() } } catch { return null } }).filter(Boolean) as { loc: string; lastmod: Date | null }[]
+    // Some sites list their sitemaps in an ordinary <urlset> rather than a sitemap index
+    if (!kids.length && /<urlset\b/i.test(xml)) {
+      const entries = parseSitemap(xml)
+      if (entries.length && entries.every(e => /\.xml(\.gz)?(\?|$)/i.test(e.loc))) kids = entries.map(e => ({ loc: e.loc, lastmod: e.lastmod }))
+    }
     if (!kids.length) {
       if (!/<urlset\b/i.test(xml)) { diag?.unreadable.push(`${url}: not a sitemap (${xml.slice(0, 40).replace(/\s+/g, ' ')})`); return }
       out.push(xml); return
     }
     if (depth >= 2) return
     const wanted = kids
-      .filter(c => !c.lastmod || c.lastmod >= since)
+      .filter(c => !since || !c.lastmod || c.lastmod >= since)
       .filter(c => !(exclude && exclude.test(c.loc)) && !/(product|fund|people|author|tag|image|video-sitemap|careers?)/i.test(c.loc.split('/').pop() || ''))
-      .filter(c => !NON_ENGLISH.test(new URL(c.loc).pathname))
+      .filter(c => { try { return !NON_ENGLISH.test(new URL(c.loc).pathname) } catch { return false } })
       .sort((a, b) => (b.lastmod?.getTime() || 0) - (a.lastmod?.getTime() || 0))
     for (const c of wanted) { if (budget <= 0) break; await visit(c.loc, depth + 1) }
   }
@@ -152,11 +157,19 @@ export async function discover(source: ManagerSource, since: Date, opts: { maxCh
   const diag = opts.diag
 
   if (source.kind === 'rss' || !source.kind) {
-    const feed = await new Parser().parseString(await getText(source.feed_url))
-    return feed.items
-      .filter(it => it.link && keep(it.link))
-      .map(it => ({ ...base, url: it.link!, title: it.title, lastmod: it.isoDate || (it.pubDate ? new Date(it.pubDate).toISOString() : null) }))
+    const days = Math.max(1, Math.ceil((Date.now() - since.getTime()) / 864e5))
+    const feed = await new Parser().parseString(await getText(source.feed_url.replace('{days}', String(days))))
+    const items = feed.items
+      .filter(it => it.link && (source.headlineOnly || keep(it.link)))
+      .map(it => ({
+        ...base, url: it.link!,
+        // A news index adds " - Publisher" to every headline
+        title: source.headlineOnly ? String(it.title || '').replace(/\s+[-–|]\s+[^-–|]{2,60}$/, '').trim() : it.title,
+        lastmod: it.isoDate || (it.pubDate ? new Date(it.pubDate).toISOString() : null),
+      }))
       .filter(d => !d.lastmod || new Date(d.lastmod) >= since)
+    if (diag) { diag.entries = feed.items.length; diag.in_window = items.length; diag.unique_pieces = new Set(items.map(i => (i.title || '').toLowerCase())).size }
+    return items
   }
 
   if (source.kind === 'listing') {
@@ -170,13 +183,14 @@ export async function discover(source: ManagerSource, since: Date, opts: { maxCh
   const roots = source.kind === 'robots' ? await sitemapsOf(source.feed_url, diag) : [source.feed_url]
   if (diag) diag.roots = roots
   if (!roots.length) throw new Error(`no sitemap found: ${diag?.robots || ''}; ${diag?.unreadable.join('; ') || ''}`.slice(0, 300))
-  const xmls = await readSitemapTree(roots, since, exclude, opts.maxChildSitemaps || 40, diag)
+  const xmls = await readSitemapTree(roots, source.ignoreLastmod ? null : since, exclude, opts.maxChildSitemaps || 40, diag)
   if (!xmls.length) throw new Error(`sitemap not readable: ${(diag?.unreadable || []).slice(0, 2).join('; ') || roots[0]}`.slice(0, 300))
 
   const seen = new Set<string>()
   const dated: Discovered[] = [], undated: Discovered[] = []
   for (const xml of xmls) {
     for (const e of parseSitemap(xml)) {
+      if (source.ignoreLastmod) e.lastmod = null
       if (diag) diag.entries++
       if (e.lastmod && e.lastmod < since) continue
       if (diag) { diag.in_window++; if (!e.lastmod) diag.undated++ }
