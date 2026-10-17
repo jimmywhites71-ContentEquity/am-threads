@@ -178,5 +178,5 @@ test('API cost is worked out from tokens at list prices', async () => {
   const u = {}
   addUsage(u, 'claude-sonnet-5-5', { usage: { input_tokens: 1_000_000, output_tokens: 100_000 } })
   addUsage(u, 'claude-haiku-5-5', { usage: { input_tokens: 2_000_000, output_tokens: 200_000 } })
-  assert.equal(costOf(u), 2 + 1 + 0.2 + 0.1)
+  assert.equal(costOf(u), 3.3)
 })
