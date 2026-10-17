@@ -133,6 +133,9 @@ const HOUSES: HouseSpec[] = [
   ['rlam', 'Royal London Asset Management', 'https://www.rlam.com'],
   ['man-group', 'Man Group', 'https://www.man.com', '/(insights|maninstitute)/'],
   ['ninety-one', 'Ninety One', 'https://ninetyone.com'],
+  // Added to wave 1 by James (17 Oct)
+  ['gemcorp', 'Gemcorp Capital', 'https://www.gemcorpcapital.com', '/insight/[^?#]+'],
+  ['nedgroup', 'Nedgroup Investments', 'https://www.nedgroupinvestments.com'],
   // Wave 2
   ['mackenzie', 'Mackenzie Investments', 'https://www.mackenzieinvestments.com'],
   ['amova', 'Amova Asset Management (formerly Nikko AM)', 'https://www.nikkoam.com'],
@@ -263,8 +266,9 @@ const OVERRIDES: Record<string, Partial<ManagerSource>> = {
 // Sites that refuse automated readers (403 or 429 to every request, 17 Oct 2026): their own site
 // source is switched off and headlines come from Google News instead. Sites that only timed out
 // keep their site source too, in case it was a slow day.
-const REFUSING = new Set(['aegon-am', 'fidelity-intl', 'manulife-im', 'neuberger', 'aviva-investors', 'blackstone', 'ninety-one', 'rlam'])
+const REFUSING = new Set(['nedgroup', 'aegon-am', 'fidelity-intl', 'manulife-im', 'neuberger', 'aviva-investors', 'blackstone', 'ninety-one', 'rlam'])
 const HEADLINE_SITES: [manager: string, site: string][] = [
+  ['nedgroup', 'nedgroupinvestments.com'],
   ['aegon-am', 'aegonam.com'],  // insights load by JavaScript, so headlines only
   ['lgam', 'am.landg.com'],     // the listing page shows only the latest ten; headlines fill the gaps
   ['fidelity-intl', 'fidelityinternational.com'],
@@ -288,13 +292,15 @@ export const SOURCES: ManagerSource[] = [
     pageInclude: include || INSIGHT_PATH, pageExclude: NOT_CONTENT, verified: false,
     ...(OVERRIDES[id] || {}),
   })),
+  // Nedgroup's own site refuses our reader; its podcast feed carries its insight series
+  S('nedgroup', { id: 'nedgroup-podcast', name: 'Insights podcast', feed_url: 'https://rss.iono.fm/rss/chan/8736', content_type: 'podcast', kind: 'rss', verified: false }),
   ...HEADLINE_SITES.map(([id, site]) => S(id, {
     id: `${id}-news`, name: 'Headlines (news index)', feed_url: newsFeed(site), content_type: 'article', kind: 'rss',
     headlineOnly: true, verified: false,
   })),
 ]
 
-for (const s of SOURCES) if (REFUSING.has(s.manager) && !s.headlineOnly) s.active = false
+for (const s of SOURCES) if (REFUSING.has(s.manager) && s.id.endsWith('-site')) s.active = false
 
 export const sourcesForWave = (wave: 1 | 2 | 'all') =>
   SOURCES.filter(s => s.active !== false && (wave === 'all' || MANAGER_BY_ID.get(s.manager)!.wave === wave))

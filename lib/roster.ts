@@ -138,4 +138,7 @@ export const ROSTER: RosterRow[] = [
   { rank: null, group: 'Royal London Group', market: 'U.K.', aum_musd: 177497, status: 'wave 1', houses: ['rlam'], note: 'Rank 118; added by James.' },
   { rank: null, group: 'Man Group', market: 'U.K.', aum_musd: 143300, status: 'wave 1', houses: ['man-group'], note: 'Rank 139; added by James.' },
   { rank: null, group: 'Ninety One', market: 'South Africa', aum_musd: 159294, status: 'wave 1', houses: ['ninety-one'], note: 'Rank 132; added by James.' },
+  // Added to wave 1 by James (17 Oct 2026)
+  { rank: null, group: 'Gemcorp Capital', market: 'U.K.', aum_musd: null, status: 'wave 1', houses: ['gemcorp'], note: 'Not in the ranking; added by James.' },
+  { rank: null, group: 'Nedgroup Investments', market: 'South Africa', aum_musd: null, status: 'wave 1', houses: ['nedgroup'], note: 'Not in the ranking; added by James. Its site refuses our reader: podcast feed and news headlines.' },
 ]

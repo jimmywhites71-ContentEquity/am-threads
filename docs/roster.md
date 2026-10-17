@@ -1,15 +1,15 @@
 # AM Intelligence — manager roster v1
 
-*15 Oct 2026. Source: the top 100 of the Thinking Ahead Institute / Pensions & Investments 500 ranking, 2023 edition (total assets at end-2022, USD), supplied by James, plus ten houses he added. The code copy is `lib/roster.ts` in the am-threads repository; this doc is generated from it. Exclusions and wave 2 are proposals for James to confirm.*
+*15 Oct 2026. Source: the top 100 of the Thinking Ahead Institute / Pensions & Investments 500 ranking, 2023 edition (total assets at end-2022, USD), supplied by James, plus twelve houses he added. The code copy is `lib/roster.ts` in the am-threads repository; this doc is generated from it. Exclusions and wave 2 are proposals for James to confirm.*
 
 ## How the ranking maps to what we track
 The ranking lists **groups**; the product tracks the **houses that publish**.
-- **Wave 1 — 71 houses:** 61 houses for 57 ranked groups, plus ten added by James (15 Oct): M&G, AQR, Bridgewater, Blackstone, Apollo, Lazard, Robeco, Royal London, Man Group and Ninety One. Some groups publish through more than one house: Allianz (PIMCO and Allianz GI), BNY (BNY Investments, Insight, Newton), Natixis (Natixis IM and Loomis Sayles). Some publish under another name: Prudential Financial → PGIM, Sun Life → MFS, Ameriprise → Columbia Threadneedle, MassMutual → Barings.
+- **Wave 1 — 73 houses:** 61 houses for 57 ranked groups, plus twelve added by James: M&G, AQR, Bridgewater, Blackstone, Apollo, Lazard, Robeco, Royal London, Man Group and Ninety One (15 Oct); Gemcorp Capital and Nedgroup Investments (17 Oct). Some groups publish through more than one house: Allianz (PIMCO and Allianz GI), BNY (BNY Investments, Insight, Newton), Natixis (Natixis IM and Loomis Sayles). Some publish under another name: Prudential Financial → PGIM, Sun Life → MFS, Ameriprise → Columbia Threadneedle, MassMutual → Barings.
 - **Wave 2 — 16 houses.** Real output but regional, smaller or mainly non-English. Added once wave 1 runs cleanly.
 - **Merged — 2.** Credit Suisse is now UBS; AXA IM now belongs to BNP Paribas.
 - **Proposed exclusions — 25.** Banks and insurers managing in-house money, an index sub-adviser, a holding company, and Chinese fund firms publishing mainly in Chinese.
 
-**Total: 87 houses** (71 in wave 1, 16 in wave 2).
+**Total: 89 houses** (73 in wave 1, 16 in wave 2).
 
 ## Rules that follow from the roster
 - **Attention index:** every house on the roster is supply, so its content must be left out of the independent attention measure. This matters for Mercer (a consultant) and for M&G's Bond Vigilantes, which AlphaThreads reads.
@@ -94,6 +94,8 @@ Every house except the first eleven starts with its site's robots.txt, which nam
 | – | Royal London Group | U.K. | $177bn | Royal London Asset Management | Rank 118; added by James. |
 | – | Man Group | U.K. | $143bn | Man Group | Rank 139; added by James. |
 | – | Ninety One | South Africa | $159bn | Ninety One | Rank 132; added by James. |
+| – | Gemcorp Capital | U.K. | – | Gemcorp Capital | Not in the ranking; added by James. |
+| – | Nedgroup Investments | South Africa | – | Nedgroup Investments | Not in the ranking; added by James. Its site refuses our reader: podcast feed and news headlines. |
 
 ## Wave 2
 
