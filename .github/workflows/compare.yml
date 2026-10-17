@@ -1,0 +1,29 @@
+name: Tagging comparison
+
+# Re-tags a spread of already-tagged pieces with other set-ups (nothing is stored) and files the
+# agreement and cost per piece to the "Tagging comparison" issue. Costs well under a dollar.
+on:
+  workflow_dispatch:
+    inputs:
+      n:
+        description: 'How many pieces'
+        required: false
+        default: '100'
+
+permissions:
+  issues: write
+
+jobs:
+  compare:
+    runs-on: ubuntu-latest
+    env:
+      SITE_RAW: ${{ vars.SITE_URL }}
+      AUTH: 'Authorization: Bearer ${{ secrets.PIPELINE_API_KEY }}'
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - run: |
+          SITE="${SITE_RAW%/}"
+          curl -sS -L "$SITE/api/compare?n=${{ github.event.inputs.n }}" -H "$AUTH" --max-time 300 -o out.md || echo "The comparison could not be read." > out.md
+          head -c 65000 out.md > body.md
+          n=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "Tagging comparison in:title" --json number,title --jq '[.[] | select(.title == "Tagging comparison")][0].number // empty')
+          if [ -n "$n" ]; then gh issue edit "$n" --repo "$GITHUB_REPOSITORY" --body-file body.md; else gh issue create --repo "$GITHUB_REPOSITORY" --title "Tagging comparison" --body-file body.md; fi

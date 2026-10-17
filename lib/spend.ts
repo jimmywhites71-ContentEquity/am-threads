@@ -5,7 +5,7 @@ export async function spendSoFar(sb: ReturnType<typeof db>) {
   const now = new Date()
   const day = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), now.getUTCDate())).toISOString()
   const month = new Date(Date.UTC(now.getUTCFullYear(), now.getUTCMonth(), 1)).toISOString()
-  const { data } = await sb.from('runs').select('started_at, stats').eq('step', 'classify').gte('started_at', month).limit(10000)
+  const { data } = await sb.from('runs').select('started_at, stats').in('step', ['classify', 'compare']).gte('started_at', month).limit(10000)
   let monthUsd = 0, dayUsd = 0
   for (const r of data || []) {
     const c = Number((r.stats as any)?.cost_usd || 0)

@@ -17,12 +17,14 @@ export const dailyCap = () => Number(process.env.MAX_PIECES_PER_DAY || 300)
 /** Spending stops for the month once this is reached (USD, list prices). Set MONTHLY_BUDGET_USD in Vercel. */
 export const monthlyBudget = () => Number(process.env.MONTHLY_BUDGET_USD || 40)
 
-export interface Usage { [model: string]: { input: number; output: number; calls: number } }
+export interface Usage { [model: string]: { input: number; cache_write: number; cache_read: number; output: number; calls: number } }
 
 export function addUsage(u: Usage, model: string, m: any) {
   const key = Object.keys(PRICES).find(p => model.startsWith(p)) || model
-  const row = (u[key] ||= { input: 0, output: 0, calls: 0 })
-  row.input += Number(m?.usage?.input_tokens || 0) + Number(m?.usage?.cache_read_input_tokens || 0) + Number(m?.usage?.cache_creation_input_tokens || 0)
+  const row = (u[key] ||= { input: 0, cache_write: 0, cache_read: 0, output: 0, calls: 0 })
+  row.input += Number(m?.usage?.input_tokens || 0)
+  row.cache_write += Number(m?.usage?.cache_creation_input_tokens || 0)
+  row.cache_read += Number(m?.usage?.cache_read_input_tokens || 0)
   row.output += Number(m?.usage?.output_tokens || 0)
   row.calls++
 }
@@ -31,7 +33,8 @@ export function costOf(u: Usage): number {
   let usd = 0
   for (const [model, r] of Object.entries(u)) {
     const p = PRICES[model]
-    if (p) usd += (r.input * p.input + r.output * p.output) / 1e6
+    // Cache writes cost 1.25x the input price and cache reads 0.1x (5-minute cache)
+    if (p) usd += (r.input * p.input + (r.cache_write || 0) * p.input * 1.25 + (r.cache_read || 0) * p.input * 0.1 + r.output * p.output) / 1e6
   }
   return Math.round(usd * 10000) / 10000
 }

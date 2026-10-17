@@ -80,19 +80,28 @@ EXPLICIT CALL: true only if the piece states a directional view an investor coul
 THEME CANDIDATE: if the piece is substantially about something no theme covers, name it in 2-4 words; otherwise null.`
 }
 
-async function tagBatch(c: Anthropic, model: string, batch: TagInput[], usage?: Usage): Promise<Map<string, Tags>> {
-  const lines = batch.map((p, i) => `${i + 1}. [${p.manager}, ${p.format}] ${p.title}\n   Summary: ${p.summary.replace(/\s+/g, ' ').slice(0, 700) || '(none)'}\n   Opening: ${p.opening.replace(/\s+/g, ' ').slice(0, 500)}`).join('\n')
-  const prompt = `You classify content published by asset managers for a competitive-intelligence dataset. Be strict: tag what each piece is substantially about, not what it mentions.
+// The instructions and taxonomy guide are the same in every call, so they go in a cached system
+// prompt: after the first call in a run they are billed at a tenth of the input price.
+let SYSTEM_CACHE: string | null = null
+function systemPrompt(): string {
+  return SYSTEM_CACHE ||= `You classify content published by asset managers for a competitive-intelligence dataset. Be strict: tag what each piece is substantially about, not what it mentions.
 
 ${guide()}
 
-Pieces:
-${lines}
-
 Reply with one line of JSON per piece, in order, nothing else:
 {"n":1,"asset_classes":[],"sub_asset_classes":[],"primary_theme":null,"secondary_themes":[],"regions":[],"vehicles":[],"content_purpose":"market commentary","explicit_call":false,"call_text":null,"theme_candidate":null}`
-  const direct = /sonnet-5-5/.test(model) ? { thinking: { type: 'between_tools' } } : {}
-  const m = await c.messages.create({ model, max_tokens: 6000, ...direct, messages: [{ role: 'user', content: prompt }] } as any, { timeout: 180_000, maxRetries: 1 })
+}
+
+export interface TagOptions { model?: string; /** 'direct' answers without a reasoning step (Sonnet 5.5); 'default' lets the model reason first */ mode?: 'direct' | 'default' }
+
+async function tagBatch(c: Anthropic, model: string, batch: TagInput[], usage?: Usage, mode: 'direct' | 'default' = 'direct'): Promise<Map<string, Tags>> {
+  const lines = batch.map((p, i) => `${i + 1}. [${p.manager}, ${p.format}] ${p.title}\n   Summary: ${p.summary.replace(/\s+/g, ' ').slice(0, 700) || '(none)'}\n   Opening: ${p.opening.replace(/\s+/g, ' ').slice(0, 500)}`).join('\n')
+  const direct = mode === 'direct' && /sonnet-5-5/.test(model) ? { thinking: { type: 'between_tools' } } : {}
+  const m = await c.messages.create({
+    model, max_tokens: 9000, ...direct,
+    system: [{ type: 'text', text: systemPrompt(), cache_control: { type: 'ephemeral' } }],
+    messages: [{ role: 'user', content: `Pieces:\n${lines}` }],
+  } as any, { timeout: 180_000, maxRetries: 1 })
   if (usage) addUsage(usage, model, m)
   const out = new Map<string, Tags>()
   for (const line of textOf(m).split('\n')) {
@@ -137,10 +146,12 @@ export function normaliseTags(row: any): Tags {
   }
 }
 
-export async function tagPieces(pieces: TagInput[], opts: { batch?: number; parallel?: number; deadline?: number; usage?: Usage } = {}): Promise<{ tags: Map<string, Tags>; errors: string[] }> {
+export async function tagPieces(pieces: TagInput[], opts: { batch?: number; parallel?: number; deadline?: number; usage?: Usage } & TagOptions = {}): Promise<{ tags: Map<string, Tags>; errors: string[] }> {
   const c = client()
-  const model = TAGGER_MODEL()
-  const size = opts.batch || 15
+  const model = opts.model || TAGGER_MODEL()
+  const mode = opts.mode || (process.env.TAGGER_MODE === 'default' ? 'default' : 'direct')
+  // 30 pieces a call: the guide is cached either way, and fewer calls means fewer cache writes
+  const size = opts.batch || 30
   const batches: TagInput[][] = []
   for (let i = 0; i < pieces.length; i += size) batches.push(pieces.slice(i, i + size))
   const tags = new Map<string, Tags>()
@@ -148,7 +159,7 @@ export async function tagPieces(pieces: TagInput[], opts: { batch?: number; para
   await Promise.all(Array.from({ length: Math.min(opts.parallel || 3, batches.length) }, async () => {
     for (let b = batches.shift(); b; b = batches.shift()) {
       if (opts.deadline && Date.now() > opts.deadline) break
-      try { for (const [k, v] of await tagBatch(c, model, b, opts.usage)) tags.set(k, v) }
+      try { for (const [k, v] of await tagBatch(c, model, b, opts.usage, mode)) tags.set(k, v) }
       catch (err: any) { errors.push(`${err?.status || ''} ${String(err?.message || err).slice(0, 120)}`.trim()) }
     }
   }))
