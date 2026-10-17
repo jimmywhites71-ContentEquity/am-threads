@@ -19,7 +19,7 @@ on:
       pages:
         description: 'Most read/tag calls per step'
         required: false
-        default: '20'
+        default: '150'
 
 permissions:
   issues: write
@@ -50,7 +50,7 @@ jobs:
       - name: Read and measure
         run: |
           fails=0
-          for i in $(seq 1 ${{ github.event.inputs.pages || '20' }}); do
+          for i in $(seq 1 ${{ github.event.inputs.pages || '150' }}); do
             curl -sS -L -X POST "$SITE/api/process?limit=80" -H "$AUTH" --max-time 300 -o p.json || true
             if jq -e '.taken' p.json >/dev/null 2>&1; then
               fails=0; jq -c '{taken, pieces_new, editions_added, failed, skipped_old, remaining, seconds}' p.json | tee -a run.log
@@ -64,7 +64,7 @@ jobs:
       - name: Summarise and tag
         run: |
           fails=0
-          for i in $(seq 1 ${{ github.event.inputs.pages || '20' }}); do
+          for i in $(seq 1 ${{ github.event.inputs.pages || '150' }}); do
             curl -sS -L -X POST "$SITE/api/classify?limit=60" -H "$AUTH" --max-time 300 -o c.json || true
             if jq -e '.taken' c.json >/dev/null 2>&1; then
               fails=0; jq -c '{taken, summarised, tagged, remaining, seconds, errors: (.errors[0:2])}' c.json | tee -a run.log

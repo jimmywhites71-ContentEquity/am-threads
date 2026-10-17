@@ -11,7 +11,7 @@ export const maxDuration = 300
 // not pull in a house's whole archive through re-dated sitemap entries.
 
 const MAX_ATTEMPTS = 3
-const PER_HOUSE = 4
+const PER_HOUSE = 8
 
 function pieceRow(manager_id: string, p: Extracted) {
   const r = p.readability
@@ -40,7 +40,7 @@ export async function POST(req: NextRequest) {
   // Take the newest waiting addresses, then spread the batch across houses (a few each), so one
   // house with hundreds of pages cannot hold up the rest and each site is read gently
   const { data: pool, error } = await sb.from('editions').select('url, source_id, manager_id, region, channel, lastmod, attempts')
-    .eq('status', 'new').lt('attempts', MAX_ATTEMPTS).order('lastmod', { ascending: false, nullsFirst: false }).limit(limit * 8)
+    .eq('status', 'new').lt('attempts', MAX_ATTEMPTS).order('lastmod', { ascending: false, nullsFirst: false }).limit(3000)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
   const perHouse = new Map<string, number>()
   const queue = (pool || []).filter(e => {
