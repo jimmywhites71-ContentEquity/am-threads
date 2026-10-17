@@ -245,17 +245,17 @@ const FIRST_SOURCES: ManagerSource[] = [
 
 // House-specific settings found by the source check (17 Oct 2026)
 const OVERRIDES: Record<string, Partial<ManagerSource>> = {
-  'pictet-am': { pageInclude: '/(global-articles|articles|insights|perspectives|market-views)/[^?#]+' },
   russell: { pageInclude: '/(blog|insights|perspectives)/[^?#]+', ignoreLastmod: true },
   newton: { ignoreLastmod: true },
-  lgam: { ignoreLastmod: true },
-  'hsbc-am': { ignoreLastmod: true },
   mercer: { ignoreLastmod: true },
   'rbc-gam': { ignoreLastmod: true },
   'macquarie-am': { pageInclude: '/(insights|perspectives)/[^?#]+' },
-  // No sitemap: read their insight listing pages instead
+  // Pictet's English articles sit in its UK sitemap among 89 others: read that one directly
+  'pictet-am': { kind: 'sitemap', feed_url: 'https://am.pictet.com/content/am-pictet.sitemap.uk-en-sites-sitemap.xml', pageInclude: '/uk/en/(investment-views|investment-research|mega|insights|perspectives)/[^?#]+' },
+  // No sitemap with articles: read their insight listing pages instead
+  lgam: { kind: 'listing', feed_url: 'https://am.landg.com/en-uk/institutional/insights/', pageInclude: '/insights/[^?#]+/[^?#]+' },
+  'hsbc-am': { kind: 'listing', feed_url: 'https://www.assetmanagement.hsbc.co.uk/en/institutional-investor/news-and-insights', pageInclude: '/news-and-insights/[^?#]+' },
   schwab: { kind: 'listing', feed_url: 'https://www.schwab.com/learn', pageInclude: '/learn/story/[^?#]+' },
-  'aegon-am': { kind: 'listing', feed_url: 'https://www.aegonam.com/en/insights/', pageInclude: '/insights/[^?#]+' },
   'metlife-im': { kind: 'listing', feed_url: 'https://investments.metlife.com/insights/', pageInclude: '/insights/[^?#]+' },
   robeco: { kind: 'listing', feed_url: 'https://www.robeco.com/en-int/insights', pageInclude: '/insights/[^?#]+' },
 }
@@ -263,8 +263,10 @@ const OVERRIDES: Record<string, Partial<ManagerSource>> = {
 // Sites that refuse automated readers (403 or 429 to every request, 17 Oct 2026): their own site
 // source is switched off and headlines come from Google News instead. Sites that only timed out
 // keep their site source too, in case it was a slow day.
-const REFUSING = new Set(['fidelity-intl', 'manulife-im', 'neuberger', 'aviva-investors', 'blackstone', 'ninety-one', 'rlam'])
+const REFUSING = new Set(['aegon-am', 'fidelity-intl', 'manulife-im', 'neuberger', 'aviva-investors', 'blackstone', 'ninety-one', 'rlam'])
 const HEADLINE_SITES: [manager: string, site: string][] = [
+  ['aegon-am', 'aegonam.com'],  // insights load by JavaScript, so headlines only
+  ['lgam', 'am.landg.com'],     // the listing page shows only the latest ten; headlines fill the gaps
   ['fidelity-intl', 'fidelityinternational.com'],
   ['ntam', 'northerntrust.com/asset-management'],
   ['msim', 'morganstanley.com/im'],

@@ -126,6 +126,11 @@ async function readSitemapTree(roots: string[], since: Date | null, exclude: Reg
       const entries = parseSitemap(xml)
       if (entries.length && entries.every(e => /\.xml(\.gz)?(\?|$)/i.test(e.loc))) kids = entries.map(e => ({ loc: e.loc, lastmod: e.lastmod }))
     }
+    // Some sitemap indexes list pages rather than sitemaps (Amundi): read them as pages
+    if (kids.length && !kids.some(k => /\.xml(\.gz)?(\?|$)/i.test(k.loc))) {
+      out.push('<urlset>' + kids.map(k => `<url><loc>${k.loc.replace(/&/g, '&amp;')}</loc>${k.lastmod ? `<lastmod>${k.lastmod.toISOString()}</lastmod>` : ''}</url>`).join('') + '</urlset>')
+      return
+    }
     if (!kids.length) {
       if (!/<urlset\b/i.test(xml)) { diag?.unreadable.push(`${url}: not a sitemap (${xml.slice(0, 40).replace(/\s+/g, ' ')})`); return }
       out.push(xml); return
@@ -190,6 +195,8 @@ export async function discover(source: ManagerSource, since: Date, opts: { maxCh
   const dated: Discovered[] = [], undated: Discovered[] = []
   for (const xml of xmls) {
     for (const e of parseSitemap(xml)) {
+      // A sitemap that names a placeholder host ("http://default/article/…") means the house's own site
+      try { const u = new URL(e.loc); if (!u.hostname.includes('.')) e.loc = new URL(u.pathname + u.search, new URL(source.feed_url).origin).toString() } catch {}
       if (source.ignoreLastmod) e.lastmod = null
       if (diag) diag.entries++
       if (e.lastmod && e.lastmod < since) continue

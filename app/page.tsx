@@ -6,7 +6,7 @@ export default function Home() {
       <h1 style={{ fontSize: 28, marginBottom: 8 }}>AM Intelligence</h1>
       <p style={{ color: '#555', lineHeight: 1.5 }}>
         A structured record of what asset managers publish: themes, asset classes, formats, readability and visual treatment.
-        The browsing feed, manager profiles and white-space view are being built.
+        The browsing feed is at <a href="/feed">/feed</a> (password protected).
       </p>
     </main>
   )
