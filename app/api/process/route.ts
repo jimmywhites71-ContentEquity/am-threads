@@ -11,6 +11,7 @@ export const maxDuration = 300
 // not pull in a house's whole archive through re-dated sitemap entries.
 
 const MAX_ATTEMPTS = 3
+const PER_HOUSE = 4
 
 function pieceRow(manager_id: string, p: Extracted) {
   const r = p.readability
@@ -32,13 +33,22 @@ export async function POST(req: NextRequest) {
   const started = Date.now()
   const deadline = started + 240_000
   const q = req.nextUrl.searchParams
-  const limit = Math.min(Number(q.get('limit') || 40), 150)
+  const limit = Math.min(Number(q.get('limit') || 80), 150)
   const oldest = new Date(Date.now() - Number(q.get('before_days') || 400) * 864e5)
   const sb = db()
 
-  const { data: queue, error } = await sb.from('editions').select('url, source_id, manager_id, region, channel, lastmod, attempts')
-    .eq('status', 'new').lt('attempts', MAX_ATTEMPTS).order('lastmod', { ascending: false, nullsFirst: false }).limit(limit)
+  // Take the newest waiting addresses, then spread the batch across houses (a few each), so one
+  // house with hundreds of pages cannot hold up the rest and each site is read gently
+  const { data: pool, error } = await sb.from('editions').select('url, source_id, manager_id, region, channel, lastmod, attempts')
+    .eq('status', 'new').lt('attempts', MAX_ATTEMPTS).order('lastmod', { ascending: false, nullsFirst: false }).limit(limit * 8)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
+  const perHouse = new Map<string, number>()
+  const queue = (pool || []).filter(e => {
+    const n = perHouse.get(e.manager_id) || 0
+    if (n >= PER_HOUSE) return false
+    perHouse.set(e.manager_id, n + 1)
+    return true
+  }).slice(0, limit)
 
   const stats = { taken: queue?.length || 0, pieces_new: 0, editions_added: 0, failed: 0, gated: 0, skipped_old: 0, errors: {} as Record<string, number> }
   const note = (k: string) => { stats.errors[k] = (stats.errors[k] || 0) + 1 }

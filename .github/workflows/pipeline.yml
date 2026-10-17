@@ -44,17 +44,29 @@ jobs:
           done
       - name: Read and measure
         run: |
+          fails=0
           for i in $(seq 1 ${{ github.event.inputs.pages || '20' }}); do
-            curl -sS -L -X POST "$SITE/api/process?limit=40" -H "$AUTH" --max-time 300 -o p.json || break
-            cat p.json; echo
-            [ "$(jq -r '.remaining // 0' p.json)" -gt 0 ] && [ "$(jq -r '.taken // 0' p.json)" -gt 0 ] || break
+            curl -sS -L -X POST "$SITE/api/process?limit=80" -H "$AUTH" --max-time 300 -o p.json || true
+            if jq -e '.taken' p.json >/dev/null 2>&1; then
+              fails=0; jq -c '{taken, pieces_new, editions_added, failed, skipped_old, remaining, seconds}' p.json
+              [ "$(jq -r '.remaining // 0' p.json)" -gt 0 ] && [ "$(jq -r '.taken // 0' p.json)" -gt 0 ] || break
+            else
+              fails=$((fails+1)); echo "Call $i failed: $(head -c 200 p.json 2>/dev/null)"
+              [ $fails -ge 3 ] && break
+            fi
           done
       - name: Summarise and tag
         run: |
+          fails=0
           for i in $(seq 1 ${{ github.event.inputs.pages || '20' }}); do
-            curl -sS -L -X POST "$SITE/api/classify?limit=60" -H "$AUTH" --max-time 300 -o c.json || break
-            cat c.json; echo
-            [ "$(jq -r '.remaining // 0' c.json)" -gt 0 ] && [ "$(jq -r '.tagged // 0' c.json)" -gt 0 ] || break
+            curl -sS -L -X POST "$SITE/api/classify?limit=60" -H "$AUTH" --max-time 300 -o c.json || true
+            if jq -e '.taken' c.json >/dev/null 2>&1; then
+              fails=0; jq -c '{taken, summarised, tagged, remaining, seconds, errors: (.errors[0:2])}' c.json
+              [ "$(jq -r '.remaining // 0' c.json)" -gt 0 ] && [ "$(jq -r '.taken // 0' c.json)" -gt 0 ] || break
+            else
+              fails=$((fails+1)); echo "Call $i failed: $(head -c 200 c.json 2>/dev/null)"
+              [ $fails -ge 3 ] && break
+            fi
           done
       - name: Publish status
         if: always()

@@ -37,7 +37,7 @@ export async function GET(req: NextRequest) {
     `# AM Intelligence status (${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC)`,
     '',
     `Pieces stored: ${total} (gated ${gated}, thin ${thin}). Reading queue: ${newQ} waiting, ${failed} failed, ${skipped} skipped as too old.`,
-    `Tagged to taxonomy ${TAXONOMY_VERSION}: ${tagged} (${pct(tagged, total - gated)}). Of those: with an asset class ${pct(withAsset, tagged)}, with a primary theme ${pct(withTheme, tagged)}, making an explicit call ${pct(withCall, tagged)}.`,
+    `Tagged to taxonomy ${TAXONOMY_VERSION}: ${tagged} (${pct(tagged, total)}). Of those: with an asset class ${pct(withAsset, tagged)}, with a primary theme ${pct(withTheme, tagged)}, making an explicit call ${pct(withCall, tagged)}.`,
     '',
     '## Pieces by manager (all / last 7 days)',
     ...perManager.map(({ m, n, week }) => `- ${m.name}: ${n} / ${week}`),
