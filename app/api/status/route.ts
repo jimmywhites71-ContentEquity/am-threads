@@ -33,6 +33,9 @@ export async function GET(req: NextRequest) {
     count('pieces', q => q.eq('taxonomy_version', TAXONOMY_VERSION).eq('explicit_call', true)),
   ])
   const { data: candidates } = await sb.from('theme_candidates').select('*').limit(10)
+  // "Quality is equities only" (taxonomy 1.0.1): should always be zero
+  const { data: qualityRows } = await sb.from('pieces').select('id, asset_classes').or('primary_theme.eq.Quality,secondary_themes.cs.{"Quality"}').limit(5000)
+  const qualityOffEquity = (qualityRows || []).filter(r => !(r.asset_classes || []).includes('Equities')).length
   const spend = await spendSoFar(sb)
   const pct = (a: number, b: number) => b ? `${Math.round((a / b) * 100)}%` : 'n/a'
 
@@ -41,6 +44,8 @@ export async function GET(req: NextRequest) {
     '',
     `Pieces stored: ${total} (gated ${gated}, thin ${thin}). Reading queue: ${newQ} waiting, ${failed} failed, ${skipped} skipped as too old.`,
     `Tagged to taxonomy ${TAXONOMY_VERSION}: ${tagged} (${pct(tagged, total)}). Of those: with an asset class ${pct(withAsset, tagged)}, with a primary theme ${pct(withTheme, tagged)}, making an explicit call ${pct(withCall, tagged)}.`,
+    '',
+    `Quality on pieces not tagged Equities: ${qualityOffEquity} (should be 0).`,
     '',
     '## Costs (Anthropic API, list prices)',
     `- Today (UTC): $${spend.dayUsd.toFixed(2)}; ${spend.taggedToday} of ${dailyCap()} pieces allowed today.`,

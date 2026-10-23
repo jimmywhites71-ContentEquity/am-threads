@@ -3,6 +3,9 @@ name: Screenshots
 # Above-the-fold and full-page screenshots of newly read pieces, after the daily pipeline.
 # Needs secrets NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY, and a private storage
 # bucket called "captures" in the Supabase project.
+permissions:
+  issues: write
+
 on:
   schedule:
     - cron: '53 6 * * *'
@@ -29,4 +32,14 @@ jobs:
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
           BOT_CONTACT_URL: ${{ vars.BOT_CONTACT_URL }}
-        run: npm run capture -- --limit ${{ github.event.inputs.limit || '60' }}
+        run: |
+          set -o pipefail
+          npm run capture -- --limit ${{ github.event.inputs.limit || '60' }} 2>&1 | tee capture.log
+      - name: File the result
+        if: always()
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          { echo "Run $(date -u '+%Y-%m-%d %H:%M') UTC: $GITHUB_SERVER_URL/$GITHUB_REPOSITORY/actions/runs/$GITHUB_RUN_ID"; echo; echo '```'; tail -n 40 capture.log 2>/dev/null || echo "(no log)"; echo '```'; } > body.md
+          n=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "Screenshots in:title" --json number,title --jq '[.[] | select(.title == "Screenshots")][0].number // empty')
+          if [ -n "$n" ]; then gh issue edit "$n" --repo "$GITHUB_REPOSITORY" --body-file body.md; else gh issue create --repo "$GITHUB_REPOSITORY" --title "Screenshots" --body-file body.md; fi

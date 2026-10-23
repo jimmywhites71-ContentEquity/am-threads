@@ -10,7 +10,7 @@ import { createClient } from '@supabase/supabase-js'
 import { UA } from '../lib/bot'
 
 const limit = Number(process.argv[process.argv.indexOf('--limit') + 1] || 60)
-const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL!, process.env.SUPABASE_SERVICE_ROLE_KEY!, { auth: { persistSession: false } })
+const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://missing', process.env.SUPABASE_SERVICE_ROLE_KEY || 'missing', { auth: { persistSession: false } })
 
 const DISMISS = [
   'button:has-text("Accept all")', 'button:has-text("Accept All")', 'button:has-text("Accept cookies")', 'button:has-text("I accept")',
@@ -30,6 +30,9 @@ async function upload(path: string, png: Buffer) {
 }
 
 async function main() {
+  if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) throw new Error('GitHub secrets NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are needed for screenshots')
+  const { error: bucketErr } = await sb.storage.from('captures').list('', { limit: 1 })
+  if (bucketErr) throw new Error(`Storage bucket "captures" not usable: ${bucketErr.message}`)
   // Pieces read but not yet captured, newest first
   const { data: done } = await sb.from('captures').select('piece_id').eq('kind', 'above_fold').limit(100000)
   const have = new Set((done || []).map(d => d.piece_id))
@@ -52,12 +55,15 @@ async function main() {
       await sb.from('captures').upsert({ piece_id: p.id, kind: 'above_fold', storage_path: `${p.manager_id}/${p.id}/above_fold.png`, width: 1440, height: 900, error: null }, { onConflict: 'piece_id,kind' })
       // Full page, capped so one very long page cannot fill the bucket
       const h = Math.min(await page.evaluate(() => document.documentElement.scrollHeight), 12000)
-      const full = await page.screenshot({ type: 'png', clip: { x: 0, y: 0, width: 1440, height: h }, fullPage: true })
+      // clip and fullPage cannot be combined: size the viewport to the page (capped), then take it
+      await page.setViewportSize({ width: 1440, height: h })
+      const full = await page.screenshot({ type: 'png' })
       await upload(`${p.manager_id}/${p.id}/full_page.png`, full)
       await sb.from('captures').upsert({ piece_id: p.id, kind: 'full_page', storage_path: `${p.manager_id}/${p.id}/full_page.png`, width: 1440, height: h, error: null }, { onConflict: 'piece_id,kind' })
       ok++
     } catch (err: any) {
       failed++
+      if (failed <= 5) console.log(`Failed ${p.url}: ${String(err?.message || err).slice(0, 160)}`)
       await sb.from('captures').upsert({ piece_id: p.id, kind: 'above_fold', storage_path: null, error: String(err?.message || err).slice(0, 200) }, { onConflict: 'piece_id,kind' })
     } finally { await page.close() }
   }
