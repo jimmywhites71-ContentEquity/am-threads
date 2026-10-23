@@ -8,6 +8,8 @@
 import { chromium, type Page } from 'playwright'
 import { createClient } from '@supabase/supabase-js'
 import { UA } from '../lib/bot'
+import { extractFromHtml } from '../lib/extract'
+import { pieceRow } from '../lib/piece-row'
 
 const limit = Number(process.argv[process.argv.indexOf('--limit') + 1] || 60)
 const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://missing', process.env.SUPABASE_SERVICE_ROLE_KEY || 'missing', { auth: { persistSession: false } })
@@ -72,8 +74,34 @@ async function main() {
       await sb.from('captures').upsert({ piece_id: p.id, kind: 'above_fold', storage_path: null, error: String(err?.message || err).slice(0, 200) }, { onConflict: 'piece_id,kind' })
     } finally { await page.close() }
   }
+  // Second pass: pages that build their text in the browser came back "thin" (under 150 words) to
+  // the plain reader. Read them again once the browser has rendered them; if there is now real
+  // text, store the new measures and clear the tags so the next pipeline run summarises and tags them.
+  const thinLimit = Number(process.env.THIN_LIMIT || 40)
+  const { data: thin } = await sb.from('pieces').select('id, url, manager_id').eq('status', 'thin').not('url', 'ilike', '%.pdf%').order('updated_at', { ascending: true }).limit(thinLimit)
+  let rendered = 0, stillThin = 0
+  for (const p of thin || []) {
+    const page = await ctx.newPage()
+    try {
+      await page.goto(p.url, { waitUntil: 'networkidle', timeout: 30000 }).catch(() => page.waitForTimeout(3000))
+      await dismiss(page)
+      const extracted = extractFromHtml(await page.content(), p.url)
+      if (extracted.readability.word_count >= 150 && !extracted.gated) {
+        const row = pieceRow(p.manager_id, extracted)
+        await sb.from('pieces').update({ ...row, url: p.url, summary: null, taxonomy_version: null }).eq('id', p.id)
+        await sb.from('piece_text').upsert({ piece_id: p.id, text: extracted.text, disclaimer_text: extracted.disclaimer_text, pdf_links: extracted.pdf_links })
+        rendered++
+      } else {
+        // Touch it so the next run tries other thin pages first
+        await sb.from('pieces').update({ updated_at: new Date().toISOString() }).eq('id', p.id)
+        stillThin++
+      }
+    } catch { stillThin++ } finally { await page.close() }
+  }
+  console.log(`Thin pages re-read in the browser: ${rendered} now readable, ${stillThin} still thin`)
+
   await browser.close()
-  await sb.from('runs').insert({ step: 'capture', finished_at: new Date().toISOString(), stats: { taken: todo.length, ok, failed } })
+  await sb.from('runs').insert({ step: 'capture', finished_at: new Date().toISOString(), stats: { taken: todo.length, ok, failed, rendered, stillThin } })
   console.log(`Done: ${ok} captured, ${failed} failed`)
 }
 

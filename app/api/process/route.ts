@@ -1,7 +1,8 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db, logRun, unauthorised } from '@/lib/db'
 import { pieceKey } from '@/lib/dedupe'
-import { readPage, type Extracted } from '@/lib/extract'
+import { readPage } from '@/lib/extract'
+import { pieceRow } from '@/lib/piece-row'
 
 export const maxDuration = 300
 
@@ -13,20 +14,6 @@ export const maxDuration = 300
 const MAX_ATTEMPTS = 3
 const PER_HOUSE = 8
 
-function pieceRow(manager_id: string, p: Extracted) {
-  const r = p.readability
-  return {
-    manager_id, title: p.title || null, url: p.url, canonical_url: p.canonical_url, published_at: p.published_at,
-    authors: p.authors, format: p.format, image_url: p.image_url,
-    word_count: r.word_count, reading_minutes: r.reading_minutes, pages: p.pages,
-    flesch_reading_ease: r.flesch_reading_ease, fk_grade: r.fk_grade, avg_sentence_words: r.avg_sentence_words,
-    long_word_share: r.long_word_share, passive_share: r.passive_share, jargon_per_100: r.jargon_per_100,
-    unexplained_acronyms: r.unexplained_acronyms, figures_per_1000: r.figures_per_1000,
-    disclaimer_share: p.disclaimer_share, structure: p.structure, visual: p.visual,
-    gated: p.gated, status: p.gated ? 'gated' : r.word_count < 150 ? 'thin' : 'read',
-    updated_at: new Date().toISOString(),
-  }
-}
 
 export async function POST(req: NextRequest) {
   const denied = unauthorised(req); if (denied) return denied
