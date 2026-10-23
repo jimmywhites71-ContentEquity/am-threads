@@ -271,10 +271,11 @@ const OVERRIDES: Record<string, Partial<ManagerSource>> = {
   newton: { ignoreLastmod: true },
   mercer: { ignoreLastmod: true },
   // UK houses (23 Oct): stale sitemap dates, or insights under their own paths
-  johcm: { ignoreLastmod: true },
-  redwheel: { pageInclude: '/(insights|blog)/(?!category)[^?#]+', ignoreLastmod: true },
-  '7im': { ignoreLastmod: true },
-  quilter: { ignoreLastmod: true },
+  // (paths checked from GitHub with the sitemap-paths workflow, 23 Oct)
+  redwheel: { pageInclude: '/(insights|blog)/(?!category)(?![^?#]*hello-world)[^?#]+', ignoreLastmod: true },
+  '7im': { pageInclude: '/news-views/[^?#]+', ignoreLastmod: true },
+  quilter: { pageInclude: '/news-and-views/all-articles/[^?#]+', ignoreLastmod: true },
+  'close-brothers-am': { pageInclude: '/insights/[^/?#]+/[^/?#]+' },
   // Fixes from the 23 Oct review
   bnppam: { pageInclude: '/(insights|forward-thinking|portfolio-perspectives|front-of-mind|viewpoints?)/[^?#]+' },
   allspring: { pageInclude: '/insights/[^?#]+', ignoreLastmod: true },
@@ -295,7 +296,8 @@ const OVERRIDES: Record<string, Partial<ManagerSource>> = {
 // source is switched off and headlines come from Google News instead. Sites that only timed out
 // keep their site source too, in case it was a slow day.
 // msim and nuveen: their own sites time out or carry no sitemap, so they rely on headlines (23 Oct)
-const REFUSING = new Set(['fundsmith', 'premier-miton', 'artemis', 'rbc-gam', 'msim', 'nuveen', 'nedgroup', 'aegon-am', 'fidelity-intl', 'manulife-im', 'neuberger', 'aviva-investors', 'blackstone', 'ninety-one', 'rlam'])
+// johcm: its sitemap lists people and funds but no insights, so headlines only
+const REFUSING = new Set(['johcm', 'fundsmith', 'premier-miton', 'artemis', 'rbc-gam', 'msim', 'nuveen', 'nedgroup', 'aegon-am', 'fidelity-intl', 'manulife-im', 'neuberger', 'aviva-investors', 'blackstone', 'ninety-one', 'rlam'])
 const HEADLINE_SITES: [manager: string, site: string][] = [
   ['nedgroup', 'nedgroupinvestments.com'],
   ['aegon-am', 'aegonam.com'],  // insights load by JavaScript, so headlines only
@@ -307,7 +309,8 @@ const HEADLINE_SITES: [manager: string, site: string][] = [
   ['fundsmith', 'fundsmith.co.uk'],
   ['premier-miton', 'premiermiton.com'],
   ['artemis', 'artemisfunds.com'],
-  ['quilter', 'quilter.com'],  // its sitemap answers 404 to our reader (23 Oct)
+  ['quilter', 'quilter.com'],  // headlines as well, in case its sitemap refuses our reader
+  ['johcm', 'johcm.com'],
   ['schwab', 'schwab.com/learn/story'],  // its listing page shows no links to our reader
   ['msim', 'morganstanley.com/im'],
   ['nuveen', 'nuveen.com'],
