@@ -69,7 +69,7 @@ jobs:
         run: |
           fails=0
           for i in $(seq 1 ${{ github.event.inputs.pages || '150' }}); do
-            curl -sS -L -X POST "$SITE/api/classify?limit=60" -H "$AUTH" --max-time 300 -o c.json || true
+            curl -sS -L -X POST "$SITE/api/classify?limit=60&backfill=${{ github.event.inputs.approve_backfill || 'no' }}" -H "$AUTH" --max-time 300 -o c.json || true
             if jq -e '.taken' c.json >/dev/null 2>&1; then
               fails=0; jq -c '{taken, summarised, tagged, remaining, seconds, cost_usd, stopped, errors: (.errors[0:2])}' c.json | tee -a run.log
               [ -n "$(jq -r '.stopped // empty' c.json)" ] && break

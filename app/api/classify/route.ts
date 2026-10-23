@@ -3,7 +3,7 @@ import { summarise, tagPieces } from '@/lib/classifier'
 import { db, logRun, unauthorised } from '@/lib/db'
 import { MANAGER_BY_ID } from '@/lib/sources'
 import { TAXONOMY_VERSION } from '@/lib/taxonomy'
-import { costOf, dailyCap, monthlyBudget, type Usage } from '@/lib/usage'
+import { backfillBudget, backfillDailyCap, costOf, dailyCap, monthlyBudget, type Usage } from '@/lib/usage'
 import { spendSoFar } from '@/lib/spend'
 
 export const maxDuration = 300
@@ -29,12 +29,15 @@ export async function POST(req: NextRequest) {
 
   // Limits: stop before spending if the month's budget is used or today's cap is reached
   const spent = await spendSoFar(sb)
-  const allowance = Math.max(0, dailyCap() - spent.taggedToday)
-  if (!dry && spent.monthUsd >= monthlyBudget()) {
-    return NextResponse.json({ taken: 0, tagged: 0, remaining: 0, stopped: `monthly budget reached ($${spent.monthUsd.toFixed(2)} of $${monthlyBudget()})` })
+  const backfill = q.get('backfill') === 'yes'
+  const cap = backfill ? backfillDailyCap() : dailyCap()
+  const budget = monthlyBudget() + (backfill ? backfillBudget() : 0)
+  const allowance = Math.max(0, cap - spent.taggedToday)
+  if (!dry && spent.monthUsd >= budget) {
+    return NextResponse.json({ taken: 0, tagged: 0, remaining: 0, stopped: `monthly budget reached ($${spent.monthUsd.toFixed(2)} of $${budget}${backfill ? ' including the backfill allowance' : ''})` })
   }
   if (!dry && allowance === 0) {
-    return NextResponse.json({ taken: 0, tagged: 0, remaining: 0, stopped: `daily cap reached (${spent.taggedToday} of ${dailyCap()} pieces today)` })
+    return NextResponse.json({ taken: 0, tagged: 0, remaining: 0, stopped: `daily cap reached (${spent.taggedToday} of ${cap} pieces today)` })
   }
 
   const { data: rows, error } = await sb.from('pieces')

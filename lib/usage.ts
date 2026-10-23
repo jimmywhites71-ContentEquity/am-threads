@@ -38,3 +38,11 @@ export function costOf(u: Usage): number {
   }
   return Math.round(usd * 10000) / 10000
 }
+
+/**
+ * An approved backfill (pipeline run with approve_backfill = yes) gets its own allowance on top of
+ * the monthly budget, and a higher daily cap, so a year's history can be tagged in a few runs.
+ * James approved a 12-month backfill on 23 Oct 2026 (estimate about $35-45).
+ */
+export const backfillBudget = () => Number(process.env.BACKFILL_BUDGET_USD || 45)
+export const backfillDailyCap = () => Number(process.env.BACKFILL_DAILY_CAP || 5000)
