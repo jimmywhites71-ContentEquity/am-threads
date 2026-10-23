@@ -131,7 +131,14 @@ async function readSitemapTree(roots: string[], since: Date | null, exclude: Reg
     if (budget-- <= 0) return
     let xml: string
     try { xml = await getText(url) } catch (err: any) { diag?.unreadable.push(`${url}: ${String(err?.message || err).slice(0, 60)}`); return }
-    let kids = parseSitemapIndex(xml).map(k => { try { return { ...k, loc: new URL(k.loc, url).toString() } } catch { return null } }).filter(Boolean) as { loc: string; lastmod: Date | null }[]
+    let kids = parseSitemapIndex(xml).map(k => {
+      try {
+        const u = new URL(k.loc, url)
+        // A placeholder host ("http://default/…", Amundi) means the parent sitemap's own site
+        const fixed = u.hostname.includes('.') ? u : new URL(u.pathname + u.search, new URL(url).origin)
+        return { ...k, loc: fixed.toString() }
+      } catch { return null }
+    }).filter(Boolean) as { loc: string; lastmod: Date | null }[]
     // Some sites list their sitemaps in an ordinary <urlset> rather than a sitemap index
     if (!kids.length && /<urlset\b/i.test(xml)) {
       const entries = parseSitemap(xml)

@@ -254,7 +254,8 @@ const OVERRIDES: Record<string, Partial<ManagerSource>> = {
   // Fixes from the 23 Oct review
   bnppam: { pageInclude: '/(insights|forward-thinking|portfolio-perspectives|front-of-mind|viewpoints?)/[^?#]+' },
   allspring: { pageInclude: '/insights/[^?#]+', ignoreLastmod: true },
-  'rbc-gam': { feed_url: 'https://www.rbcgam.com', ignoreLastmod: true },
+  // robots.txt names rbcgam.com/sitemap.xml, which is a 404; the www address works
+  'rbc-gam': { kind: 'sitemap', feed_url: 'https://www.rbcgam.com/sitemap.xml', pageInclude: '/en/ca/[^?#]*(insights|article)[^?#]*/[^?#]+' },
   'macquarie-am': { pageInclude: '/(insights|perspectives)/[^?#]+' },
   // Pictet's English articles sit in its UK sitemap among 89 others: read that one directly
   'pictet-am': { kind: 'sitemap', feed_url: 'https://am.pictet.com/content/am-pictet.sitemap.uk-en-sites-sitemap.xml', pageInclude: '/uk/en/(investment-views|investment-research|mega|insights|perspectives)/[^?#]+' },
@@ -276,7 +277,7 @@ const HEADLINE_SITES: [manager: string, site: string][] = [
   ['aegon-am', 'aegonam.com'],  // insights load by JavaScript, so headlines only
   ['lgam', 'am.landg.com'],     // the listing page shows only the latest ten; headlines fill the gaps
   ['fidelity-intl', 'fidelityinternational.com'],
-  ['ntam', 'northerntrust.com/united-states/what-we-think'],
+  ['ntam', 'northerntrust.com'],
   ['schwab', 'schwab.com/learn/story'],  // its listing page shows no links to our reader
   ['msim', 'morganstanley.com/im'],
   ['nuveen', 'nuveen.com'],
