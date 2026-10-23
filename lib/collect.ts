@@ -77,7 +77,7 @@ export interface Diagnostics {
 const NON_ENGLISH = /\/(de|fr|es|it|nl|ja|jp|zh|ko|pt|sv|da|fi|no|nb|pl|cs|hu|el|tr|ar|he)([-_][a-z]{2,4})?(\/|$)/i
 
 /** An index or hub page rather than a piece: its last segment is a generic word with no slug */
-const GENERIC_LAST = /^(insights?|thinking|research|articles?|perspectives?|collections?|[a-z]+-collections|publications?|podcasts?|videos?|webinars?|news|news-and-insights|commentary|outlooks?|index|overview|library|topics?|all|latest|blog|strategy|views?|ideas)$/i
+const GENERIC_LAST = /^(our-thinking|investment-insights|wealth-insights|insights-and-events|news-and-views|market-insights|latest-insights|top-stories|all-insights|investment-opinions|insights?|thinking|research|articles?|perspectives?|collections?|[a-z]+-collections|publications?|podcasts?|videos?|webinars?|news|news-and-insights|commentary|outlooks?|index|overview|library|topics?|all|latest|blog|strategy|views?|ideas)$/i
 /**
  * A news-index headline that is a real piece: at least four words, and not a person's profile,
  * a legal or fund-document page, or the site's own index pages (seen 17 Oct 2026).

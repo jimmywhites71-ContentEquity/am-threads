@@ -151,7 +151,7 @@ const HOUSES: HouseSpec[] = [
   ['quilter', 'Quilter', 'https://www.quilter.com'],
   ['fulcrum', 'Fulcrum Asset Management', 'https://fulcrumasset.com'],
   ['edentree', 'EdenTree Investment Management', 'https://www.edentreeim.com'],
-  ['close-brothers-am', 'Close Brothers Asset Management', 'https://www.closebrothersam.com'],
+  ['close-brothers-am', 'Trinity Bridge (formerly Close Brothers Asset Management)', 'https://www.trinitybridge.com'],
   // Added to wave 1 by James (17 Oct)
   ['gemcorp', 'Gemcorp Capital', 'https://www.gemcorpcapital.com', '/insight/[^?#]+'],
   ['nedgroup', 'Nedgroup Investments', 'https://www.nedgroupinvestments.com'],
@@ -270,6 +270,11 @@ const OVERRIDES: Record<string, Partial<ManagerSource>> = {
   russell: { pageInclude: '/(blog|insights|perspectives)/[^?#]+', ignoreLastmod: true },
   newton: { ignoreLastmod: true },
   mercer: { ignoreLastmod: true },
+  // UK houses (23 Oct): stale sitemap dates, or insights under their own paths
+  johcm: { ignoreLastmod: true },
+  redwheel: { pageInclude: '/(insights|blog)/(?!category)[^?#]+', ignoreLastmod: true },
+  '7im': { ignoreLastmod: true },
+  quilter: { ignoreLastmod: true },
   // Fixes from the 23 Oct review
   bnppam: { pageInclude: '/(insights|forward-thinking|portfolio-perspectives|front-of-mind|viewpoints?)/[^?#]+' },
   allspring: { pageInclude: '/insights/[^?#]+', ignoreLastmod: true },
@@ -290,14 +295,19 @@ const OVERRIDES: Record<string, Partial<ManagerSource>> = {
 // source is switched off and headlines come from Google News instead. Sites that only timed out
 // keep their site source too, in case it was a slow day.
 // msim and nuveen: their own sites time out or carry no sitemap, so they rely on headlines (23 Oct)
-const REFUSING = new Set(['rbc-gam', 'msim', 'nuveen', 'nedgroup', 'aegon-am', 'fidelity-intl', 'manulife-im', 'neuberger', 'aviva-investors', 'blackstone', 'ninety-one', 'rlam'])
+const REFUSING = new Set(['fundsmith', 'premier-miton', 'artemis', 'rbc-gam', 'msim', 'nuveen', 'nedgroup', 'aegon-am', 'fidelity-intl', 'manulife-im', 'neuberger', 'aviva-investors', 'blackstone', 'ninety-one', 'rlam'])
 const HEADLINE_SITES: [manager: string, site: string][] = [
   ['nedgroup', 'nedgroupinvestments.com'],
   ['aegon-am', 'aegonam.com'],  // insights load by JavaScript, so headlines only
   ['lgam', 'am.landg.com'],     // the listing page shows only the latest ten; headlines fill the gaps
   ['fidelity-intl', 'fidelityinternational.com'],
   ['ntam', 'northerntrust.com'],
-  ['rbc-gam', 'rbcgam.com'],  // its sitemap answers 404 to our reader (23 Oct)
+  ['rbc-gam', 'rbcgam.com'],
+  // UK houses whose sites refuse or time out (23 Oct)
+  ['fundsmith', 'fundsmith.co.uk'],
+  ['premier-miton', 'premiermiton.com'],
+  ['artemis', 'artemisfunds.com'],
+  ['quilter', 'quilter.com'],  // its sitemap answers 404 to our reader (23 Oct)
   ['schwab', 'schwab.com/learn/story'],  // its listing page shows no links to our reader
   ['msim', 'morganstanley.com/im'],
   ['nuveen', 'nuveen.com'],

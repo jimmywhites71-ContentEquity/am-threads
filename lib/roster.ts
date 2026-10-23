@@ -156,7 +156,7 @@ export const ROSTER: RosterRow[] = [
   { rank: null, group: 'Quilter', market: 'U.K.', aum_musd: null, status: 'wave 1', houses: ['quilter'], note: 'IA UK fund ranking 21; added by James.' },
   { rank: null, group: 'Fulcrum Asset Management', market: 'U.K.', aum_musd: null, status: 'wave 1', houses: ['fulcrum'], note: 'IA UK fund ranking 64; added by James.' },
   { rank: null, group: 'EdenTree Investment Management', market: 'U.K.', aum_musd: null, status: 'wave 1', houses: ['edentree'], note: 'IA UK fund ranking 57; added by James.' },
-  { rank: null, group: 'Close Brothers Asset Management', market: 'U.K.', aum_musd: null, status: 'wave 1', houses: ['close-brothers-am'], note: 'IA UK fund ranking 47; added by James.' },
+  { rank: null, group: 'Close Brothers Asset Management', market: 'U.K.', aum_musd: null, status: 'wave 1', houses: ['close-brothers-am'], note: 'IA UK fund ranking 47; added by James. Now trades as Trinity Bridge.' },
   // Added to wave 1 by James (17 Oct 2026)
   { rank: null, group: 'Gemcorp Capital', market: 'U.K.', aum_musd: null, status: 'wave 1', houses: ['gemcorp'], note: 'Not in the ranking; added by James.' },
   { rank: null, group: 'Nedgroup Investments', market: 'South Africa', aum_musd: null, status: 'wave 1', houses: ['nedgroup'], note: 'Not in the ranking; added by James. Its site refuses our reader: podcast feed and news headlines.' },
