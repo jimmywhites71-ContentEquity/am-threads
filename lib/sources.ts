@@ -234,7 +234,7 @@ const S = (manager: string, s: Omit<ManagerSource, 'manager' | 'provider' | 'cat
 const FIRST_SOURCES: ManagerSource[] = [
   S('jpmam', { id: 'jpmam-us-adv', name: 'Insights (US advisers)', feed_url: 'https://am.jpmorgan.com/us/en/asset-management/adv/sitemap.xml', content_type: 'article', kind: 'sitemap', pageInclude: '/adv/insights/[^?#]+', pageExclude: NOT_CONTENT, verified: 'alphathreads' }),
   S('jpmam', { id: 'jpmam-gb-liq', name: 'Insights (UK institutional)', feed_url: 'https://am.jpmorgan.com/gb/en/asset-management/liq/sitemap.xml', content_type: 'article', kind: 'sitemap', pageInclude: '/liq/insights/[^?#]+', pageExclude: NOT_CONTENT, verified: false }),
-  S('amundi', { id: 'amundi-research', name: 'Research Center', feed_url: 'https://research-center.amundi.com', content_type: 'article', kind: 'robots', pageInclude: '/(article|insights?)/[^?#]+', verified: false }),
+  S('amundi', { id: 'amundi-research', name: 'Research Center', feed_url: 'https://research-center.amundi.com', content_type: 'article', kind: 'robots', pageInclude: '/(article|insights?)/[^?#]+', ignoreLastmod: true, verified: false }),
   S('schroders', { id: 'schroders-uk-inst', name: 'Insights (UK institutional)', feed_url: 'https://www.schroders.com/en-gb/uk/institutional/sitemap.xml', content_type: 'article', kind: 'sitemap', pageInclude: '/en-gb/uk/institutional/insights/[^/]+/?$', verified: 'alphathreads' }),
   S('fidelity-intl', { id: 'fidelity-uk-pro', name: 'Insights (UK professional)', feed_url: 'https://professionals.fidelity.co.uk/sitemap.xml', content_type: 'article', kind: 'sitemap', pageInclude: '/(perspectives|articles|insights)/[^?#]+', pageExclude: NOT_CONTENT, verified: false }),
   S('vanguard', { id: 'vanguard-corporate', name: 'Insights', feed_url: 'https://corporate.vanguard.com', content_type: 'article', kind: 'robots', pageInclude: '/(articles|insights|research)/[^?#]+', verified: false }),
@@ -271,13 +271,14 @@ const OVERRIDES: Record<string, Partial<ManagerSource>> = {
 // source is switched off and headlines come from Google News instead. Sites that only timed out
 // keep their site source too, in case it was a slow day.
 // msim and nuveen: their own sites time out or carry no sitemap, so they rely on headlines (23 Oct)
-const REFUSING = new Set(['msim', 'nuveen', 'nedgroup', 'aegon-am', 'fidelity-intl', 'manulife-im', 'neuberger', 'aviva-investors', 'blackstone', 'ninety-one', 'rlam'])
+const REFUSING = new Set(['rbc-gam', 'msim', 'nuveen', 'nedgroup', 'aegon-am', 'fidelity-intl', 'manulife-im', 'neuberger', 'aviva-investors', 'blackstone', 'ninety-one', 'rlam'])
 const HEADLINE_SITES: [manager: string, site: string][] = [
   ['nedgroup', 'nedgroupinvestments.com'],
   ['aegon-am', 'aegonam.com'],  // insights load by JavaScript, so headlines only
   ['lgam', 'am.landg.com'],     // the listing page shows only the latest ten; headlines fill the gaps
   ['fidelity-intl', 'fidelityinternational.com'],
   ['ntam', 'northerntrust.com'],
+  ['rbc-gam', 'rbcgam.com'],  // its sitemap answers 404 to our reader (23 Oct)
   ['schwab', 'schwab.com/learn/story'],  // its listing page shows no links to our reader
   ['msim', 'morganstanley.com/im'],
   ['nuveen', 'nuveen.com'],
