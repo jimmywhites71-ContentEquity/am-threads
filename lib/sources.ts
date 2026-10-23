@@ -275,7 +275,7 @@ const OVERRIDES: Record<string, Partial<ManagerSource>> = {
   redwheel: { pageInclude: '/(insights|blog)/(?!category)(?![^?#]*hello-world)[^?#]+', ignoreLastmod: true },
   '7im': { pageInclude: '/news-views/[^?#]+', ignoreLastmod: true },
   quilter: { pageInclude: '/news-and-views/all-articles/[^?#]+', ignoreLastmod: true },
-  'close-brothers-am': { pageInclude: '/insights/[^/?#]+/[^/?#]+' },
+  'close-brothers-am': { pageInclude: '/insights/(?!(article-display|[a-z-]*-insights)/?$)[^?#]+' },
   // Fixes from the 23 Oct review
   bnppam: { pageInclude: '/(insights|forward-thinking|portfolio-perspectives|front-of-mind|viewpoints?)/[^?#]+' },
   allspring: { pageInclude: '/insights/[^?#]+', ignoreLastmod: true },
