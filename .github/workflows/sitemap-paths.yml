@@ -4,11 +4,15 @@ on:
   workflow_dispatch:
     inputs:
       urls: { description: 'Sitemap addresses, space separated', required: true }
+permissions:
+  issues: write
 jobs:
   paths:
     runs-on: ubuntu-latest
     steps:
-      - run: |
+      - env: { GH_TOKEN: '${{ github.token }}', GH_REPO: '${{ github.repository }}' }
+        run: |
+          exec > out.txt 2>&1
           UA="AMIntelligenceBot/0.1 (+https://contentequity.co.uk/#contact)"
           for u in ${{ inputs.urls }}; do
             echo "== $u"
@@ -20,3 +24,9 @@ jobs:
             awk -F/ '{print $4"/"$5}' locs.txt | sort | uniq -c | sort -rn | head -25
             grep -iE "insight|article|news|blog|comment|view|perspective|outlook|market" locs.txt | head -8
           done
+      - if: always()
+        env: { GH_TOKEN: '${{ github.token }}', GH_REPO: '${{ github.repository }}' }
+        run: |
+          { echo '```'; head -c 60000 out.txt; echo '```'; } > body.md
+          N=$(gh issue list --search "Sitemap paths in:title" --state all --json number -q '.[0].number')
+          if [ -n "$N" ]; then gh issue edit $N --body-file body.md; else gh issue create --title "Sitemap paths" --body-file body.md; fi
