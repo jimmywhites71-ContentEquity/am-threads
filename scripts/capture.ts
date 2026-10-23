@@ -31,8 +31,13 @@ async function upload(path: string, png: Buffer) {
 
 async function main() {
   if (!process.env.NEXT_PUBLIC_SUPABASE_URL || !process.env.SUPABASE_SERVICE_ROLE_KEY) throw new Error('GitHub secrets NEXT_PUBLIC_SUPABASE_URL and SUPABASE_SERVICE_ROLE_KEY are needed for screenshots')
-  const { error: bucketErr } = await sb.storage.from('captures').list('', { limit: 1 })
-  if (bucketErr) throw new Error(`Storage bucket "captures" not usable: ${bucketErr.message}`)
+  // The private "captures" bucket: created here if it does not exist yet
+  const { error: getErr } = await sb.storage.getBucket('captures')
+  if (getErr) {
+    const { error: createErr } = await sb.storage.createBucket('captures', { public: false })
+    if (createErr && !/already exists/i.test(createErr.message)) throw new Error(`Could not create the "captures" bucket: ${createErr.message}`)
+    console.log('Created the private "captures" storage bucket')
+  }
   // Pieces read but not yet captured, newest first
   const { data: done } = await sb.from('captures').select('piece_id').eq('kind', 'above_fold').limit(100000)
   const have = new Set((done || []).map(d => d.piece_id))
