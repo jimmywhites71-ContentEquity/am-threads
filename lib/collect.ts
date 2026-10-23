@@ -137,21 +137,27 @@ async function readSitemapTree(roots: string[], since: Date | null, exclude: Reg
       const entries = parseSitemap(xml)
       if (entries.length && entries.every(e => /\.xml(\.gz)?(\?|$)/i.test(e.loc))) kids = entries.map(e => ({ loc: e.loc, lastmod: e.lastmod }))
     }
-    // Some sitemap indexes list pages rather than sitemaps (Amundi): read them as pages
-    if (kids.length && !kids.some(k => /\.xml(\.gz)?(\?|$)/i.test(k.loc))) {
-      out.push('<urlset>' + kids.map(k => `<url><loc>${k.loc.replace(/&/g, '&amp;')}</loc>${k.lastmod ? `<lastmod>${k.lastmod.toISOString()}</lastmod>` : ''}</url>`).join('') + '</urlset>')
-      return
+    // Some sitemap indexes list pages as well as (or instead of) sitemaps (Amundi): read those as pages
+    const isXml = (loc: string) => /\.xml(\.gz)?(\?|$)/i.test(loc)
+    const pageKids = kids.filter(k => !isXml(k.loc))
+    if (pageKids.length) {
+      out.push('<urlset>' + pageKids.map(k => `<url><loc>${k.loc.replace(/&/g, '&amp;')}</loc>${k.lastmod ? `<lastmod>${k.lastmod.toISOString()}</lastmod>` : ''}</url>`).join('') + '</urlset>')
+      kids = kids.filter(k => isXml(k.loc))
+      if (!kids.length) return
     }
     if (!kids.length) {
       if (!/<urlset\b/i.test(xml)) { diag?.unreadable.push(`${url}: not a sitemap (${xml.slice(0, 40).replace(/\s+/g, ' ')})`); return }
       out.push(xml); return
     }
     if (depth >= 2) return
-    const wanted = kids
-      .filter(c => !since || !c.lastmod || c.lastmod >= since)
+    const eligible = kids
       .filter(c => !(exclude && exclude.test(c.loc)) && !/(product|fund|people|author|tag|image|video-sitemap|careers?)/i.test(c.loc.split('/').pop() || ''))
       .filter(c => { try { return !NON_ENGLISH.test(new URL(c.loc).pathname) } catch { return false } })
       .sort((a, b) => (b.lastmod?.getTime() || 0) - (a.lastmod?.getTime() || 0))
+    let wanted = eligible.filter(c => !since || !c.lastmod || c.lastmod >= since)
+    // Child sitemap dates are often stale (Barings, AllianceBernstein): if none is recent enough,
+    // still read the three most recently changed rather than finding nothing
+    if (!wanted.length && eligible.length) { wanted = eligible.slice(0, 3); diag?.unreadable.push(`no child sitemap changed in the window; read the ${wanted.length} newest`) }
     for (const c of wanted) { if (budget <= 0) break; await visit(c.loc, depth + 1) }
   }
   for (const r of roots) await visit(r, 0)
