@@ -1,0 +1,34 @@
+name: Judging screenshot preview
+# Diagnostic: copies a few judging screenshots of a set to the judge-previews branch, to check them.
+on:
+  workflow_dispatch:
+    inputs:
+      set: { description: 'Set id', required: true }
+permissions:
+  contents: write
+jobs:
+  preview:
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+      - uses: actions/setup-node@v4
+        with: { node-version: 22 }
+      - run: npm install --no-audit --no-fund @supabase/supabase-js
+      - env:
+          NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+          SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+        run: |
+          mkdir -p previews
+          node -e "
+          const { createClient } = require('@supabase/supabase-js'); const fs = require('fs')
+          const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
+          ;(async () => {
+            const { data } = await sb.from('cj_items').select('n, piece_id').eq('set_id', '${{ inputs.set }}').order('n').limit(3)
+            for (const it of data) for (const k of ['top', 'page']) {
+              const { data: f } = await sb.storage.from('captures').download('judge/' + it.piece_id + '/' + k + '.jpg')
+              if (f) fs.writeFileSync('previews/' + it.n + '-' + k + '.jpg', Buffer.from(await f.arrayBuffer()))
+            }
+          })()"
+          ls -la previews
+          git config user.name preview-bot; git config user.email preview@users.noreply.github.com
+          git checkout --orphan judge-previews; git rm -rq --cached . ; git add previews; git commit -qm previews; git push -f origin judge-previews
