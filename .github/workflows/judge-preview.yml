@@ -24,11 +24,11 @@ jobs:
           const { createClient } = require('@supabase/supabase-js'); const fs = require('fs')
           const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL, process.env.SUPABASE_SERVICE_ROLE_KEY)
           ;(async () => {
-            const { data } = await sb.from('cj_items').select('n, piece_id').eq('set_id', '${{ inputs.set }}').order('n').limit(3)
-            for (const it of data) for (const k of ['top', 'page']) {
+            const { data } = await sb.from('cj_items').select('n, piece_id').eq('set_id', '${{ inputs.set }}').order('n').limit(40)
+            let got = 0; for (const it of data) { if (got >= 6) break; let any = false; for (const k of ['top', 'page']) {
               const { data: f } = await sb.storage.from('captures').download('judge/' + it.piece_id + '/' + k + '.jpg')
-              if (f) fs.writeFileSync('previews/' + it.n + '-' + k + '.jpg', Buffer.from(await f.arrayBuffer()))
-            }
+              if (f) { any = true; fs.writeFileSync('previews/' + it.n + '-' + k + '.jpg', Buffer.from(await f.arrayBuffer())) }
+            } if (any) got++ }
           })()"
           ls -la previews
           gh api -X DELETE repos/$GITHUB_REPOSITORY/git/refs/heads/judge-previews || true
