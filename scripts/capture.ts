@@ -76,6 +76,32 @@ async function captureSet(setId: string, ctx: Awaited<ReturnType<Awaited<ReturnT
       await dismiss(page)
       const problem = looksLikeArticle(await page.evaluate(() => document.body?.innerText || ''), title)
       if (problem) throw new Error(problem)
+      // Investor-type, location and cookie pop-ups: the article is already in the page beneath them, so
+      // hide any fixed layer that covers a quarter of the screen or more, and let the page scroll again
+      const clearOverlays = () => page.evaluate(() => {
+        const vw = window.innerWidth, vh = window.innerHeight
+        for (const el of Array.from(document.querySelectorAll<HTMLElement>('body *'))) {
+          const cs = getComputedStyle(el)
+          if (cs.position !== 'fixed' && cs.position !== 'sticky') continue
+          const r = el.getBoundingClientRect()
+          if (Math.min(r.width, vw) * Math.min(r.height, vh) > 0.25 * vw * vh) el.style.setProperty('display', 'none', 'important')
+        }
+        for (const el of [document.documentElement, document.body]) { el.style.setProperty('overflow', 'auto', 'important'); el.style.setProperty('filter', 'none', 'important') }
+      })
+      await clearOverlays()
+      // The headline must be visible and on top: otherwise the page is still covered or is not the article
+      const words = Array.from(new Set(title.toLowerCase().match(/[a-z]{4,}/g) || []))
+      const headline = await page.evaluate((words: string[]) => {
+        const heads = Array.from(document.querySelectorAll<HTMLElement>('h1, h2'))
+        const h = heads.find(x => { const t = (x.innerText || '').toLowerCase(); return words.length && words.filter(w => t.includes(w)).length / words.length >= 0.6 })
+        if (!h) return 'no headline matching the title'
+        h.scrollIntoView({ block: 'center' })
+        const r = h.getBoundingClientRect()
+        const top = document.elementFromPoint(r.left + Math.min(r.width, 40) / 2, r.top + r.height / 2)
+        window.scrollTo(0, 0)
+        return top && (h.contains(top) || top.contains(h)) ? null : 'headline covered by another layer'
+      }, words)
+      if (headline) throw new Error(headline)
       const style = await page.addStyleTag({ content: HIDE })
       await page.waitForTimeout(300)
       let top = await page.screenshot({ type: 'jpeg', quality: 72 })
