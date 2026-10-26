@@ -11,6 +11,7 @@ on:
       n: { description: 'Pieces in a new set', required: false, default: '60' }
       purposes: { description: 'Content purposes for a new set, comma separated (blank = all)', required: false, default: 'thought leadership,house view' }
       days: { description: 'Look-back days for a new set', required: false, default: '60' }
+      rounds: { description: 'Comparisons per piece in a new set', required: false, default: '8' }
       dry: { description: 'yes = only list candidate themes', required: false, default: 'no' }
       models: { description: 'AI judges, space separated (sonnet haiku)', required: false, default: 'sonnet haiku' }
 
@@ -33,7 +34,7 @@ jobs:
             THEME=$(python3 -c "import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1]))" "${{ inputs.theme }}")
             PURP=$(python3 -c "import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1]))" "${{ inputs.purposes }}")
             DRY=""; [ "${{ inputs.dry }}" = "yes" ] && DRY="&dry=1"
-            curl -sS -X POST "$SITE/api/cj/setup?n=${{ inputs.n }}&days=${{ inputs.days }}&theme=$THEME&purposes=$PURP$DRY" -H "$AUTH" --max-time 120 -o setup.json
+            curl -sS -X POST "$SITE/api/cj/setup?n=${{ inputs.n }}&days=${{ inputs.days }}&rounds=${{ inputs.rounds }}&theme=$THEME&purposes=$PURP$DRY" -H "$AUTH" --max-time 120 -o setup.json
             cat setup.json; echo
             [ "${{ inputs.dry }}" = "yes" ] && { echo "SET=" >> "$GITHUB_ENV"; exit 0; }
             SET=$(python3 -c "import json; print(json.load(open('setup.json')).get('id',''))")
