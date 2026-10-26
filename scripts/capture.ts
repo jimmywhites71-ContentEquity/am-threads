@@ -93,8 +93,11 @@ async function captureSet(setId: string, ctx: Awaited<ReturnType<Awaited<ReturnT
       const words = Array.from(new Set(title.toLowerCase().match(/[a-z]{4,}/g) || []))
       const headline = await page.evaluate((words: string[]) => {
         const heads = Array.from(document.querySelectorAll<HTMLElement>('h1, h2'))
+        // The headline that matches the stored title, else the page's first visible main heading
+        // (stored titles sometimes differ from the on-page headline)
         const h = heads.find(x => { const t = (x.innerText || '').toLowerCase(); return words.length && words.filter(w => t.includes(w)).length / words.length >= 0.6 })
-        if (!h) return 'no headline matching the title'
+          || heads.find(x => x.tagName === 'H1' && x.getBoundingClientRect().height > 0)
+        if (!h) return 'no headline on the page'
         h.scrollIntoView({ block: 'center' })
         const r = h.getBoundingClientRect()
         const top = document.elementFromPoint(r.left + Math.min(r.width, 40) / 2, r.top + r.height / 2)
