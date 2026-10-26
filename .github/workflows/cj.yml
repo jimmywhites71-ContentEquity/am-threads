@@ -9,6 +9,9 @@ on:
       set: { description: 'Existing set id (blank = create a new set)', required: false, default: '' }
       theme: { description: 'Theme for a new set (blank = the theme with most comparable pieces)', required: false, default: '' }
       n: { description: 'Pieces in a new set', required: false, default: '60' }
+      purposes: { description: 'Content purposes for a new set, comma separated (blank = all)', required: false, default: 'thought leadership,house view' }
+      days: { description: 'Look-back days for a new set', required: false, default: '60' }
+      dry: { description: 'yes = only list candidate themes', required: false, default: 'no' }
       models: { description: 'AI judges, space separated (sonnet haiku)', required: false, default: 'sonnet haiku' }
 
 permissions:
@@ -28,8 +31,11 @@ jobs:
           SET="${{ inputs.set }}"
           if [ -z "$SET" ]; then
             THEME=$(python3 -c "import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1]))" "${{ inputs.theme }}")
-            curl -sS -X POST "$SITE/api/cj/setup?n=${{ inputs.n }}&theme=$THEME" -H "$AUTH" --max-time 120 -o setup.json
+            PURP=$(python3 -c "import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1]))" "${{ inputs.purposes }}")
+            DRY=""; [ "${{ inputs.dry }}" = "yes" ] && DRY="&dry=1"
+            curl -sS -X POST "$SITE/api/cj/setup?n=${{ inputs.n }}&days=${{ inputs.days }}&theme=$THEME&purposes=$PURP$DRY" -H "$AUTH" --max-time 120 -o setup.json
             cat setup.json; echo
+            [ "${{ inputs.dry }}" = "yes" ] && { echo "SET=" >> "$GITHUB_ENV"; exit 0; }
             SET=$(python3 -c "import json; print(json.load(open('setup.json')).get('id',''))")
             [ -n "$SET" ] || { echo "Set-up failed"; exit 1; }
           fi
@@ -44,7 +50,7 @@ jobs:
       - if: always()
         run: |
           SITE="${SITE_RAW%/}"
-          curl -sS "$SITE/api/cj/results?set=$SET" -H "$AUTH" --max-time 60 -o out.md || echo "The results could not be read." > out.md
+          if [ -n "$SET" ]; then curl -sS "$SITE/api/cj/results?set=$SET" -H "$AUTH" --max-time 60 -o out.md || echo "The results could not be read." > out.md; else echo "Dry run: candidate themes only (see Set-up)." > out.md; fi
           { [ -f setup.json ] && { echo '<details><summary>Set-up</summary>'; echo; echo '```'; head -c 3000 setup.json; echo; echo '```'; echo '</details>'; echo; }; [ -f j.json ] && { echo '<details><summary>Last judging call</summary>'; echo; echo '```'; head -c 2000 j.json; echo; echo '```'; echo '</details>'; echo; }; cat out.md; } | head -c 65000 > body.md
           n=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "Comparative judgement in:title" --json number,title --jq '[.[] | select(.title == "Comparative judgement")][0].number // empty')
           if [ -n "$n" ]; then gh issue edit "$n" --repo "$GITHUB_REPOSITORY" --body-file body.md; else gh issue create --repo "$GITHUB_REPOSITORY" --title "Comparative judgement" --body-file body.md; fi

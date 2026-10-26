@@ -20,7 +20,7 @@ export async function POST(req: NextRequest) {
   const since = new Date(Date.now() - days * 864e5).toISOString()
 
   const { data: rows, error } = await sb.from('pieces')
-    .select('id, manager_id, title, url, primary_theme, word_count, published_at')
+    .select('id, manager_id, title, url, primary_theme, content_purpose, word_count, published_at')
     .eq('status', 'read').in('format', ['article', 'outlook', 'research paper'])
     .gte('word_count', 700).lte('word_count', 4000).gte('published_at', since).not('primary_theme', 'is', null)
     .order('published_at', { ascending: false }).limit(20000)
@@ -29,7 +29,9 @@ export async function POST(req: NextRequest) {
   // Leave out what is not a written argument or not current: podcast, video and webinar pages,
   // and titles naming an earlier year (an old review re-dated by its sitemap)
   const year = new Date().getUTCFullYear()
-  const usable = (rows || []).filter(r => !/podcast|webinar|video|episode/i.test(`${r.url} ${r.title}`)
+  // ?purposes=thought leadership,house view keeps only those content purposes (the tagger's field)
+  const purposes = (q.get('purposes') || '').split(',').map(x => x.trim().toLowerCase()).filter(Boolean)
+  const usable = (rows || []).filter(r => (!purposes.length || purposes.includes(String(r.content_purpose || '').toLowerCase())) && !/podcast|webinar|video|episode/i.test(`${r.url} ${r.title}`)
     && !(String(r.title).match(/\b20\d\d\b/g) || []).some(y => Number(y) < year - 1))
   // Comparable pieces per theme, capped per house
   const byTheme = new Map<string, typeof rows>()
@@ -45,7 +47,9 @@ export async function POST(req: NextRequest) {
   if (q.get('dry') === '1') return NextResponse.json({ candidates: candidates.slice(0, 20) })
 
   const theme = q.get('theme') || candidates[0]?.theme
-  if (!theme || !byTheme.has(theme)) return NextResponse.json({ error: `no pieces for theme ${theme}`, candidates: candidates.slice(0, 10) }, { status: 400 })
+  const themes = (theme || '').split('|').map(t => t.trim()).filter(t => byTheme.has(t))
+  if (!themes.length) return NextResponse.json({ error: `no pieces for theme ${theme}`, candidates: candidates.slice(0, 10) }, { status: 400 })
+  if (themes.length > 1) byTheme.set(theme!, themes.flatMap(t => byTheme.get(t)!).sort((a, b) => String(b.published_at).localeCompare(String(a.published_at))))
   // Spread across houses: take each house's newest first, round-robin, so the set is not one house's month
   const pool = capped(byTheme.get(theme)!)
   const byHouse = new Map<string, typeof pool>()
@@ -65,7 +69,7 @@ export async function POST(req: NextRequest) {
   const pairs = makePairs(items.length, rounds, Date.now() % 100000)
   const { error: sErr } = await sb.from('cj_sets').insert({
     id, name: `${theme}, ${new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })} (pilot)`, theme,
-    params: { days, per_house: perHouse, words, rounds, pairs, created_from: candidates.slice(0, 10) },
+    params: { days, per_house: perHouse, words, rounds, purposes, pairs, created_from: candidates.slice(0, 10) },
   })
   if (sErr) return NextResponse.json({ error: sErr.message }, { status: 500 })
   const { error: iErr } = await sb.from('cj_items').insert(items.map((c, i) => ({
