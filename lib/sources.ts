@@ -289,6 +289,10 @@ const OVERRIDES: Record<string, Partial<ManagerSource>> = {
   'hsbc-am': { kind: 'listing', feed_url: 'https://www.assetmanagement.hsbc.co.uk/en/institutional-investor/news-and-insights', pageInclude: '/news-and-insights/[^?#]+' },
   schwab: { kind: 'listing', feed_url: 'https://www.schwab.com/learn', pageInclude: '/learn/story/[^?#]+' },
   'metlife-im': { kind: 'listing', feed_url: 'https://investments.metlife.com/insights/', pageInclude: '/insights/[^?#]+' },
+  // Nedgroup: the international site (the "Other" branch, for UK and other professional investors)
+  // lists its articles through render.html?path=…; the "Local" branch is South Africa, so headlines
+  // for the whole domain (which were mostly South African) are no longer read (26 Oct, James)
+  nedgroup: { kind: 'listing', feed_url: 'https://www.nedgroupinvestments.com/content/NGISingleSiteContent/Other/o-learn-more/o-news.html', pageInclude: '/Other/render\\.html\\?path=[^#]*/learn-more/news/[^#]+' },
   robeco: { kind: 'listing', feed_url: 'https://www.robeco.com/en-int/insights', pageInclude: '/insights/[^?#]+' },
 }
 
@@ -297,9 +301,8 @@ const OVERRIDES: Record<string, Partial<ManagerSource>> = {
 // keep their site source too, in case it was a slow day.
 // msim and nuveen: their own sites time out or carry no sitemap, so they rely on headlines (23 Oct)
 // johcm: its sitemap lists people and funds but no insights, so headlines only
-const REFUSING = new Set(['johcm', 'fundsmith', 'premier-miton', 'artemis', 'rbc-gam', 'msim', 'nuveen', 'nedgroup', 'aegon-am', 'fidelity-intl', 'manulife-im', 'neuberger', 'aviva-investors', 'blackstone', 'ninety-one', 'rlam'])
+const REFUSING = new Set(['johcm', 'fundsmith', 'premier-miton', 'artemis', 'rbc-gam', 'msim', 'nuveen', 'aegon-am', 'fidelity-intl', 'manulife-im', 'neuberger', 'aviva-investors', 'blackstone', 'ninety-one', 'rlam'])
 const HEADLINE_SITES: [manager: string, site: string][] = [
-  ['nedgroup', 'nedgroupinvestments.com'],
   ['aegon-am', 'aegonam.com'],  // insights load by JavaScript, so headlines only
   ['lgam', 'am.landg.com'],     // the listing page shows only the latest ten; headlines fill the gaps
   ['fidelity-intl', 'fidelityinternational.com'],

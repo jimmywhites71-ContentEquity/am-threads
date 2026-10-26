@@ -210,3 +210,11 @@ test('cj: Bradley-Terry recovers a known order', () => {
   assert.ok((sc.reliability || 0) > 0.6, `rel ${sc.reliability}`)
   assert.ok(Math.abs(sc.theta.reduce((a, b) => a + b, 0)) < 1e-6)
 })
+
+test('Nedgroup international: wrapped addresses keep their own slug', () => {
+  const u = 'https://www.nedgroupinvestments.com/content/NGISingleSiteContent/Other/render.html?path=/content/NGISingleSiteContent/Local/Individual-Investor/learn-more/news/the-subtraction-advantage0'
+  assert.equal(pieceKey('nedgroup', u), 'nedgroup:the-subtraction-advantage0')
+  const src = SOURCES.find(s => s.manager === 'nedgroup' && s.active !== false && s.id.endsWith('-site'))!
+  assert.ok(src && new RegExp(src.pageInclude!).test(u))
+  assert.ok(!SOURCES.some(s => s.manager === 'nedgroup' && s.active !== false && s.id.endsWith('-news')))
+})

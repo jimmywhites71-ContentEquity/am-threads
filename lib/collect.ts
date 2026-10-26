@@ -91,7 +91,7 @@ export function isRealHeadline(title: string): boolean {
 
 export function isIndexPage(url: string): boolean {
   let last = ''
-  try { last = new URL(url).pathname.split('/').filter(Boolean).pop() || '' } catch { return false }
+  try { const u = new URL(url); last = (u.searchParams.get('path') || u.pathname).split('/').filter(Boolean).pop() || '' } catch { return false }
   last = decodeURIComponent(last).replace(/\.(html?|aspx|php)$/i, '')
   if (!last) return true
   if (GENERIC_LAST.test(last)) return true

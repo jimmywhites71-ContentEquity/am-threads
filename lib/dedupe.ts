@@ -10,7 +10,8 @@ const GENERIC = /^(index|default|article|articles|insight|insights|overview|outl
 export function slugOf(url: string): string {
   let u: URL
   try { u = new URL(url) } catch { return url.toLowerCase() }
-  const parts = u.pathname.split('/').map(p => decodeURIComponent(p).toLowerCase().replace(/\.(html?|aspx|pdf)$/, '')).filter(Boolean)
+  // Some sites wrap the article's own address in a query (Nedgroup: render.html?path=/content/…/news/<slug>)
+  const parts = (u.searchParams.get('path') || u.pathname).split('/').map(p => decodeURIComponent(p).toLowerCase().replace(/\.(html?|aspx|pdf)$/, '')).filter(Boolean)
   if (!parts.length) return u.hostname
   const last = parts[parts.length - 1]
   const prev = parts[parts.length - 2]
