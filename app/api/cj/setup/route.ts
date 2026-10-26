@@ -20,15 +20,20 @@ export async function POST(req: NextRequest) {
   const since = new Date(Date.now() - days * 864e5).toISOString()
 
   const { data: rows, error } = await sb.from('pieces')
-    .select('id, manager_id, title, primary_theme, word_count, published_at')
+    .select('id, manager_id, title, url, primary_theme, word_count, published_at')
     .eq('status', 'read').in('format', ['article', 'outlook', 'research paper'])
-    .gte('word_count', 500).lte('word_count', 4000).gte('published_at', since).not('primary_theme', 'is', null)
+    .gte('word_count', 700).lte('word_count', 4000).gte('published_at', since).not('primary_theme', 'is', null)
     .order('published_at', { ascending: false }).limit(20000)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
+  // Leave out what is not a written argument or not current: podcast, video and webinar pages,
+  // and titles naming an earlier year (an old review re-dated by its sitemap)
+  const year = new Date().getUTCFullYear()
+  const usable = (rows || []).filter(r => !/podcast|webinar|video|episode/i.test(`${r.url} ${r.title}`)
+    && !(String(r.title).match(/\b20\d\d\b/g) || []).some(y => Number(y) < year - 1))
   // Comparable pieces per theme, capped per house
   const byTheme = new Map<string, typeof rows>()
-  for (const r of rows || []) byTheme.set(r.primary_theme!, [...(byTheme.get(r.primary_theme!) || []), r])
+  for (const r of usable) byTheme.set(r.primary_theme!, [...(byTheme.get(r.primary_theme!) || []), r])
   const capped = (list: NonNullable<typeof rows>) => {
     const per = new Map<string, number>()
     return list.filter(r => { const k = (per.get(r.manager_id) || 0) + 1; per.set(r.manager_id, k); return k <= perHouse })
