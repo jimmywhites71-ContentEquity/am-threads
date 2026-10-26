@@ -1,0 +1,50 @@
+name: Comparative judgement
+
+# Ideas & voice pilot. Creates a set (unless one is named), has Claude judge every pair in both
+# orders with each chosen model, then files the results to the "Comparative judgement" issue.
+# Cost: about $4 with Sonnet and Haiku on a 60-piece set; stops at CJ_BUDGET_USD a month (default $8).
+on:
+  workflow_dispatch:
+    inputs:
+      set: { description: 'Existing set id (blank = create a new set)', required: false, default: '' }
+      theme: { description: 'Theme for a new set (blank = the theme with most comparable pieces)', required: false, default: '' }
+      n: { description: 'Pieces in a new set', required: false, default: '60' }
+      models: { description: 'AI judges, space separated (sonnet haiku)', required: false, default: 'sonnet haiku' }
+
+permissions:
+  issues: write
+
+jobs:
+  judge:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      SITE_RAW: ${{ vars.SITE_URL }}
+      AUTH: 'Authorization: Bearer ${{ secrets.PIPELINE_API_KEY }}'
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - run: |
+          SITE="${SITE_RAW%/}"
+          SET="${{ inputs.set }}"
+          if [ -z "$SET" ]; then
+            THEME=$(python3 -c "import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1]))" "${{ inputs.theme }}")
+            curl -sS -X POST "$SITE/api/cj/setup?n=${{ inputs.n }}&theme=$THEME" -H "$AUTH" --max-time 120 -o setup.json
+            cat setup.json; echo
+            SET=$(python3 -c "import json; print(json.load(open('setup.json')).get('id',''))")
+            [ -n "$SET" ] || { echo "Set-up failed"; exit 1; }
+          fi
+          echo "SET=$SET" >> "$GITHUB_ENV"
+          for M in ${{ inputs.models }}; do
+            for i in $(seq 1 40); do
+              curl -sS -X POST "$SITE/api/cj/judge?set=$SET&model=$M" -H "$AUTH" --max-time 300 -o j.json || true
+              python3 -c "import json; d=json.load(open('j.json')); print({k: d.get(k) for k in ['model','judged','failed','remaining','cost_usd','month_cj_usd','stopped','errors']})" || cat j.json
+              python3 -c "import json,sys; d=json.load(open('j.json')); sys.exit(0 if (d.get('remaining',0)>0 and d.get('judged',0)>0) else 1)" || break
+            done
+          done
+      - if: always()
+        run: |
+          SITE="${SITE_RAW%/}"
+          curl -sS "$SITE/api/cj/results?set=$SET" -H "$AUTH" --max-time 60 -o out.md || echo "The results could not be read." > out.md
+          { [ -f setup.json ] && { echo '<details><summary>Set-up</summary>'; echo; echo '```'; head -c 3000 setup.json; echo; echo '```'; echo '</details>'; echo; }; [ -f j.json ] && { echo '<details><summary>Last judging call</summary>'; echo; echo '```'; head -c 2000 j.json; echo; echo '```'; echo '</details>'; echo; }; cat out.md; } | head -c 65000 > body.md
+          n=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "Comparative judgement in:title" --json number,title --jq '[.[] | select(.title == "Comparative judgement")][0].number // empty')
+          if [ -n "$n" ]; then gh issue edit "$n" --repo "$GITHUB_REPOSITORY" --body-file body.md; else gh issue create --repo "$GITHUB_REPOSITORY" --title "Comparative judgement" --body-file body.md; fi

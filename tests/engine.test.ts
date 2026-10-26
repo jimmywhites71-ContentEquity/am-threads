@@ -180,3 +180,33 @@ test('API cost is worked out from tokens at list prices', async () => {
   addUsage(u, 'claude-haiku-5-5', { usage: { input_tokens: 2_000_000, output_tokens: 200_000 } })
   assert.equal(costOf(u), 3.3)
 })
+
+// ── Comparative judgement ───────────────────────────────────────────────
+import { anonymise, fitScale, makePairs, nameVariants, spearman } from '../lib/cj'
+
+test('cj: anonymise removes the house name and cuts to length', () => {
+  const t = anonymise('schroders', 'At Schroders we think rates fall. Schroders’ view is clear. ' + 'word '.repeat(2000), 100)
+  assert.ok(!/schroders/i.test(t), t.slice(0, 120))
+  assert.ok(t.split(/\s+/).length <= 105)
+  assert.ok(nameVariants('jpmam').some(v => /J\.P\. Morgan/.test(v)))
+})
+
+test('cj: pairs are unique and every piece is compared each round', () => {
+  const pairs = makePairs(60, 8, 7)
+  assert.equal(pairs.length, 240)
+  assert.equal(new Set(pairs.map(p => p.join('-'))).size, 240)
+  const per = new Array(60).fill(0); for (const [a, b] of pairs) { per[a]++; per[b]++ }
+  assert.ok(per.every(c => c === 8))
+})
+
+test('cj: Bradley-Terry recovers a known order', () => {
+  // True strengths 0..9; simulate many comparisons
+  let s = 3; const rnd = () => (s = (s * 16807) % 2147483647) / 2147483647
+  const games: [number, number][] = []
+  for (const [a, b] of makePairs(10, 9, 3)) for (let r = 0; r < 6; r++) { const pa = 1 / (1 + Math.exp(b * 0.5 - a * 0.5)); games.push(rnd() < pa ? [a, b] : [b, a]) }
+  const sc = fitScale(10, games)
+  const rho = spearman(sc.theta, Array.from({ length: 10 }, (_, i) => i))!
+  assert.ok(rho > 0.8, `rho ${rho}`)
+  assert.ok((sc.reliability || 0) > 0.6, `rel ${sc.reliability}`)
+  assert.ok(Math.abs(sc.theta.reduce((a, b) => a + b, 0)) < 1e-6)
+})

@@ -14,4 +14,4 @@ export function middleware(req: NextRequest) {
   return new NextResponse('Password required', { status: 401, headers: { 'WWW-Authenticate': 'Basic realm="AM Intelligence"' } })
 }
 
-export const config = { matcher: ['/feed/:path*'] }
+export const config = { matcher: ['/feed/:path*', '/judge/:path*', '/api/cj/human'] }
