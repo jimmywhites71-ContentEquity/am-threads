@@ -38,7 +38,7 @@ jobs:
           BOT_CONTACT_URL: ${{ vars.BOT_CONTACT_URL }}
         run: |
           set -o pipefail
-          if [ -n "${{ github.event.inputs.set }}" ]; then npm run capture -- --set "${{ github.event.inputs.set }}" 2>&1 | tee capture.log
+          if [ -n "${{ github.event.inputs.set }}" ]; then npm run capture -- --set "${{ github.event.inputs.set }}" --force 2>&1 | tee capture.log
           else npm run capture -- --limit ${{ github.event.inputs.limit || '60' }} 2>&1 | tee capture.log; fi
       - name: File the result
         if: always()

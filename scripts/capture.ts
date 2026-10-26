@@ -38,17 +38,35 @@ async function upload(path: string, png: Buffer) {
 // as a screenshot allows (site header, navigation, logos, footer, cookie banners), as JPEGs:
 // top.jpg (1280×800, the first screen) and page.jpg (the whole page, at most 6,000 pixels tall).
 const HIDE = `header, nav, footer, [role=banner], [role=navigation], [role=contentinfo], [class*="logo" i], [id*="logo" i],
-  [class*="cookie" i], [id*="cookie" i], [id*="onetrust" i], [class*="consent" i], [class*="header" i]:not(article *):not(main *), [class*="footer" i] { visibility: hidden !important; }`
+  [class*="cookie" i], [id*="cookie" i], [id*="onetrust" i], [class*="consent" i] { visibility: hidden !important; }`
+
+// A screenshot is kept only if the page is the article itself: not a block page, an investor-type or
+// location gate, or an empty shell, and showing most of the piece's title words. Otherwise the piece
+// is judged on ideas and writing only.
+const BAD_PAGE = /403 ERROR|Access Denied|Request blocked|Forbidden|Just a moment|verify you are (a )?human|select (your )?(location|country|investor type|role)|investor type|are you an? (professional|financial|institutional)|please confirm (that )?you are|page not found/i
+function looksLikeArticle(text: string, title: string): string | null {
+  if (text.replace(/\s+/g, ' ').length < 400) return 'almost no text on the page'
+  const head = text.slice(0, 3000)
+  if (BAD_PAGE.test(head)) return `gate or block page: "${(BAD_PAGE.exec(head) || [''])[0]}"`
+  const words = Array.from(new Set(title.toLowerCase().match(/[a-z]{4,}/g) || []))
+  if (words.length >= 2) {
+    const body = text.toLowerCase()
+    const found = words.filter(w => body.includes(w)).length
+    if (found / words.length < 0.6) return `title words not on the page (${found} of ${words.length})`
+  }
+  return null
+}
 
 async function captureSet(setId: string, ctx: Awaited<ReturnType<Awaited<ReturnType<typeof chromium.launch>>['newContext']>>) {
-  const { data: items, error } = await sb.from('cj_items').select('n, piece_id, pieces(url)').eq('set_id', setId).order('n')
+  const { data: items, error } = await sb.from('cj_items').select('n, piece_id, pieces(url, title)').eq('set_id', setId).order('n')
   if (error) throw error
   const force = process.argv.includes('--force')
   const { data: have } = await sb.storage.from('captures').list('judge', { limit: 10000 })
   const done = new Set((have || []).map(f => f.name))
   let ok = 0, failed = 0, skipped = 0
   for (const it of items || []) {
-    const url = (Array.isArray((it as any).pieces) ? (it as any).pieces[0] : (it as any).pieces)?.url as string
+    const pc = (Array.isArray((it as any).pieces) ? (it as any).pieces[0] : (it as any).pieces) || {}
+    const url = pc.url as string, title = String(pc.title || '')
     if (!force && done.has(it.piece_id)) { skipped++; continue }
     const page = await ctx.newPage()
     try {
@@ -56,9 +74,14 @@ async function captureSet(setId: string, ctx: Awaited<ReturnType<Awaited<ReturnT
       await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 })
       await page.waitForTimeout(2500)
       await dismiss(page)
-      await page.addStyleTag({ content: HIDE })
+      const problem = looksLikeArticle(await page.evaluate(() => document.body?.innerText || ''), title)
+      if (problem) throw new Error(problem)
+      const style = await page.addStyleTag({ content: HIDE })
       await page.waitForTimeout(300)
-      const top = await page.screenshot({ type: 'jpeg', quality: 72 })
+      let top = await page.screenshot({ type: 'jpeg', quality: 72 })
+      // Hiding the site's furniture can hide everything on some sites: then take it as it is
+      if (top.length < 15000) { await style.evaluate((el: any) => el.remove()); await page.waitForTimeout(300); top = await page.screenshot({ type: 'jpeg', quality: 72 }) }
+      if (top.length < 15000) throw new Error('blank page')
       const h = Math.min(await page.evaluate(() => document.documentElement.scrollHeight), 6000)
       await page.setViewportSize({ width: 1280, height: h })
       await page.waitForTimeout(500)
@@ -70,10 +93,11 @@ async function captureSet(setId: string, ctx: Awaited<ReturnType<Awaited<ReturnT
       ok++
     } catch (err: any) {
       failed++
-      console.log(`Failed ${url}: ${String(err?.message || err).slice(0, 160)}`)
+      console.log(`No screenshot for ${url}: ${String(err?.message || err).slice(0, 160)}`)
+      await sb.storage.from('captures').remove([judgeImagePath(it.piece_id, 'top'), judgeImagePath(it.piece_id, 'page')])
     } finally { await page.close() }
   }
-  console.log(`Judging screenshots for ${setId}: ${ok} taken, ${skipped} already there, ${failed} failed`)
+  console.log(`Judging screenshots for ${setId}: ${ok} taken, ${skipped} already there, ${failed} without a usable screenshot`)
 }
 
 async function main() {
