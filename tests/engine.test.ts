@@ -218,3 +218,12 @@ test('Nedgroup international: wrapped addresses keep their own slug', () => {
   assert.ok(src && new RegExp(src.pageInclude!).test(u))
   assert.ok(!SOURCES.some(s => s.manager === 'nedgroup' && s.active !== false && s.id.endsWith('-news')))
 })
+
+test('cj: matched pairs compare pieces of similar length', () => {
+  const lengths = Array.from({ length: 40 }, (_, i) => 700 + i * 120)
+  const pairs = makePairs(40, 8, 11, lengths, 8)
+  assert.ok(pairs.length >= 150, `pairs ${pairs.length}`)
+  assert.equal(new Set(pairs.map(p => p.join('-'))).size, pairs.length)
+  const gap = pairs.reduce((s, [a, b]) => s + Math.abs(a - b), 0) / pairs.length
+  assert.ok(gap < 8, `mean rank gap ${gap}`)
+})

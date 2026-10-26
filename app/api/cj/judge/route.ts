@@ -1,12 +1,12 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db, logRun, unauthorised } from '@/lib/db'
-import { CJ_MODELS, cjBudget, judgePair } from '@/lib/cj'
+import { CJ_MODELS, cjBudget, judgeImagePath, judgePair } from '@/lib/cj'
 import { costOf, type Usage } from '@/lib/usage'
 
 export const maxDuration = 300
 
 // The AI judge: ?set=<id>&model=sonnet|haiku. Judges every pair of the set in both orders (A/B swapped),
-// a few at a time until the time runs out; GitHub Actions calls again while `remaining` > 0.
+// with screenshots when the set has them, a few at a time until the time runs out; GitHub Actions calls again while `remaining` > 0.
 // Stops before spending once this month's comparative-judgement spend reaches CJ_BUDGET_USD.
 export async function POST(req: NextRequest) {
   const denied = unauthorised(req); if (denied) return denied
@@ -24,7 +24,7 @@ export async function POST(req: NextRequest) {
   const { data: set } = await sb.from('cj_sets').select('id, theme, params').eq('id', setId).maybeSingle()
   if (!set) return NextResponse.json({ error: `no set ${setId}` }, { status: 404 })
   const pairs = ((set.params as any)?.pairs || []) as [number, number][]
-  const { data: items } = await sb.from('cj_items').select('n, anon_title, anon_text').eq('set_id', setId)
+  const { data: items } = await sb.from('cj_items').select('n, piece_id, anon_title, anon_text').eq('set_id', setId)
   const item = new Map((items || []).map(i => [i.n, i]))
   const { data: done } = await sb.from('cj_judgements').select('pair, left_n').eq('set_id', setId).eq('judge', model).limit(20000)
   const have = new Set((done || []).map(d => `${d.pair}:${d.left_n}`))
@@ -35,6 +35,19 @@ export async function POST(req: NextRequest) {
     if (!have.has(`${k}:${b}`)) todo.push({ pair: k, left: b, right: a })
   })
 
+  // Screenshots (top of page, whole page) as base64 JPEGs, fetched once per piece; missing ones mean
+  // the pair is judged on ideas and writing only
+  const images = new Map<number, Promise<{ top: string | null; page: string | null }>>()
+  const b64 = async (path: string) => {
+    const { data } = await sb.storage.from('captures').download(path)
+    if (!data || data.size > 4_500_000) return null
+    return Buffer.from(await data.arrayBuffer()).toString('base64')
+  }
+  const imagesOf = (n: number) => {
+    if (!images.has(n)) { const pid = item.get(n)!.piece_id; images.set(n, Promise.all([b64(judgeImagePath(pid, 'top')), b64(judgeImagePath(pid, 'page'))]).then(([top, page]) => ({ top, page }))) }
+    return images.get(n)!
+  }
+
   const usage: Usage = {}
   const stats = { judged: 0, failed: 0, errors: [] as string[] }
   const queue = todo.slice(0, Number(q.get('limit') || 200))
@@ -44,11 +57,13 @@ export async function POST(req: NextRequest) {
       const L = item.get(t.left)!, R = item.get(t.right)!
       const t0 = Date.now()
       try {
-        const v = await judgePair(model, set.theme || '', { title: L.anon_title || '', text: L.anon_text }, { title: R.anon_title || '', text: R.anon_text }, usage)
+        const [li, ri] = await Promise.all([imagesOf(t.left), imagesOf(t.right)])
+        const v = await judgePair(model, set.theme || '', { title: L.anon_title || '', text: L.anon_text, ...li }, { title: R.anon_title || '', text: R.anon_text, ...ri }, usage)
         const { error } = await sb.from('cj_judgements').insert({
           set_id: setId, pair: t.pair, left_n: t.left, right_n: t.right,
           ideas_winner: v.ideas === 'A' ? t.left : t.right, writing_winner: v.writing === 'A' ? t.left : t.right,
-          ideas_reason: v.ideas_reason, writing_reason: v.writing_reason,
+          presentation_winner: v.presentation ? (v.presentation === 'A' ? t.left : t.right) : null,
+          ideas_reason: v.ideas_reason, writing_reason: v.writing_reason, presentation_reason: v.presentation_reason,
           judge_kind: 'ai', judge: model, seconds: (Date.now() - t0) / 1000,
         })
         if (error) throw new Error(error.message)

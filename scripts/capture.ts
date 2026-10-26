@@ -10,8 +10,11 @@ import { createClient } from '@supabase/supabase-js'
 import { UA } from '../lib/bot'
 import { extractFromHtml } from '../lib/extract'
 import { pieceRow } from '../lib/piece-row'
+import { judgeImagePath } from '../lib/cj'
 
-const limit = Number(process.argv[process.argv.indexOf('--limit') + 1] || 60)
+const arg = (name: string) => { const i = process.argv.indexOf(name); return i > 0 ? process.argv[i + 1] : undefined }
+const limit = Number(arg('--limit') || 60)
+const judgeSet = arg('--set')
 const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://missing', process.env.SUPABASE_SERVICE_ROLE_KEY || 'missing', { auth: { persistSession: false } })
 
 const DISMISS = [
@@ -29,6 +32,48 @@ async function dismiss(page: Page) {
 async function upload(path: string, png: Buffer) {
   const { error } = await sb.storage.from('captures').upload(path, png, { contentType: 'image/png', upsert: true })
   if (error) throw new Error(`upload: ${error.message}`)
+}
+
+// For comparative judgement: the page as a reader meets it, with the house's identity hidden as far
+// as a screenshot allows (site header, navigation, logos, footer, cookie banners), as JPEGs:
+// top.jpg (1280×800, the first screen) and page.jpg (the whole page, at most 6,000 pixels tall).
+const HIDE = `header, nav, footer, [role=banner], [role=navigation], [role=contentinfo], [class*="logo" i], [id*="logo" i],
+  [class*="cookie" i], [id*="cookie" i], [id*="onetrust" i], [class*="consent" i], [class*="header" i]:not(article *):not(main *), [class*="footer" i] { visibility: hidden !important; }`
+
+async function captureSet(setId: string, ctx: Awaited<ReturnType<Awaited<ReturnType<typeof chromium.launch>>['newContext']>>) {
+  const { data: items, error } = await sb.from('cj_items').select('n, piece_id, pieces(url)').eq('set_id', setId).order('n')
+  if (error) throw error
+  const force = process.argv.includes('--force')
+  const { data: have } = await sb.storage.from('captures').list('judge', { limit: 10000 })
+  const done = new Set((have || []).map(f => f.name))
+  let ok = 0, failed = 0, skipped = 0
+  for (const it of items || []) {
+    const url = (Array.isArray((it as any).pieces) ? (it as any).pieces[0] : (it as any).pieces)?.url as string
+    if (!force && done.has(it.piece_id)) { skipped++; continue }
+    const page = await ctx.newPage()
+    try {
+      await page.setViewportSize({ width: 1280, height: 800 })
+      await page.goto(url, { waitUntil: 'domcontentloaded', timeout: 30000 })
+      await page.waitForTimeout(2500)
+      await dismiss(page)
+      await page.addStyleTag({ content: HIDE })
+      await page.waitForTimeout(300)
+      const top = await page.screenshot({ type: 'jpeg', quality: 72 })
+      const h = Math.min(await page.evaluate(() => document.documentElement.scrollHeight), 6000)
+      await page.setViewportSize({ width: 1280, height: h })
+      await page.waitForTimeout(500)
+      const whole = await page.screenshot({ type: 'jpeg', quality: 60 })
+      for (const [kind, img] of [['top', top], ['page', whole]] as const) {
+        const { error: upErr } = await sb.storage.from('captures').upload(judgeImagePath(it.piece_id, kind), img, { contentType: 'image/jpeg', upsert: true })
+        if (upErr) throw new Error(`upload: ${upErr.message}`)
+      }
+      ok++
+    } catch (err: any) {
+      failed++
+      console.log(`Failed ${url}: ${String(err?.message || err).slice(0, 160)}`)
+    } finally { await page.close() }
+  }
+  console.log(`Judging screenshots for ${setId}: ${ok} taken, ${skipped} already there, ${failed} failed`)
 }
 
 async function main() {
@@ -50,6 +95,7 @@ async function main() {
 
   const browser = await chromium.launch()
   const ctx = await browser.newContext({ userAgent: UA, viewport: { width: 1440, height: 900 }, deviceScaleFactor: 1 })
+  if (judgeSet) { await captureSet(judgeSet, ctx); await browser.close(); return }
   let ok = 0, failed = 0
   for (const p of todo) {
     const page = await ctx.newPage()

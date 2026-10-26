@@ -211,3 +211,7 @@ create index if not exists cj_judgements_set_idx on public.cj_judgements(set_id,
 alter table public.cj_sets enable row level security;
 alter table public.cj_items enable row level security;
 alter table public.cj_judgements enable row level security;
+-- Comparative judgement, second version (26 Oct 2026): a third question, presentation.
+-- Paste into Supabase (am-threads project) → SQL Editor → Run. Safe to run twice.
+alter table public.cj_judgements add column if not exists presentation_winner integer;
+alter table public.cj_judgements add column if not exists presentation_reason text;

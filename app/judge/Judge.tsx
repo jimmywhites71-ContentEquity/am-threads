@@ -2,7 +2,7 @@
 
 import { useCallback, useEffect, useRef, useState } from 'react'
 
-type Side = { n: number; title: string; text: string }
+type Side = { n: number; title: string; text: string; words?: number | null; top?: string | null; page?: string | null }
 type Next = { set: { id: string; name: string; theme?: string }; done: number; total: number; teamTotal?: number; pair: null | { k: number; left: Side; right: Side }; error?: string }
 
 const remember = (k: string, v?: string) => { try { if (v === undefined) return localStorage.getItem(k) || ''; localStorage.setItem(k, v) } catch {} return '' }
@@ -13,6 +13,7 @@ export default function Judge({ setId }: { setId: string }) {
   const [next, setNext] = useState<Next | null>(null)
   const [ideas, setIdeas] = useState<number | null>(null)
   const [writing, setWriting] = useState<number | null>(null)
+  const [presentation, setPresentation] = useState<number | null>(null)
   const [note, setNote] = useState('')
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
@@ -26,20 +27,22 @@ export default function Judge({ setId }: { setId: string }) {
       const r = await fetch(`/api/cj/human?judge=${encodeURIComponent(who)}${setId ? `&set=${encodeURIComponent(setId)}` : ''}`, { cache: 'no-store' })
       const j = await r.json()
       if (!r.ok) throw new Error(j.error || 'Could not load the next pair')
-      setNext(j); setIdeas(null); setWriting(null); setNote(''); shownAt.current = Date.now()
+      setNext(j); setIdeas(null); setWriting(null); setPresentation(null); setNote(''); shownAt.current = Date.now()
       window.scrollTo({ top: 0 })
     } catch (e: any) { setErr(e.message) } finally { setBusy(false) }
   }, [setId])
 
   useEffect(() => { if (name) load(name) }, [name, load])
 
+  const shots = !!(next?.pair?.left.top && next?.pair?.right.top)
+
   async function submit() {
-    if (!next?.pair || ideas == null || writing == null) return
+    if (!next?.pair || ideas == null || writing == null || (shots && presentation == null)) return
     setBusy(true); setErr('')
     try {
       const r = await fetch('/api/cj/human', {
         method: 'POST', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ set: next.set.id, judge: name, pair: next.pair.k, left_n: next.pair.left.n, right_n: next.pair.right.n, ideas_winner: ideas, writing_winner: writing, ideas_reason: note || null, seconds: (Date.now() - shownAt.current) / 1000 }),
+        body: JSON.stringify({ set: next.set.id, judge: name, pair: next.pair.k, left_n: next.pair.left.n, right_n: next.pair.right.n, ideas_winner: ideas, writing_winner: writing, presentation_winner: shots ? presentation : null, ideas_reason: note || null, seconds: (Date.now() - shownAt.current) / 1000 }),
       })
       if (!r.ok) throw new Error((await r.json()).error || 'Not saved')
       await load(name)
@@ -49,7 +52,7 @@ export default function Judge({ setId }: { setId: string }) {
   if (!name) return (
     <div className="wrap"><style>{CSS}</style>
       <h1>Ideas &amp; voice: judging</h1>
-      <p className="lede">You will see two pieces on the same subject, with the house names removed, and pick the better one on two questions. Go with your editorial instinct: 30 to 60 seconds a pair is right. Your choices anchor the scale Claude builds from its own judgements.</p>
+      <p className="lede">You will see two pieces on the same subject and of similar length, with the house names removed, and pick the better one on three questions: ideas, writing and presentation. Each piece shows the top of its page as published (site header and logo hidden; click it for the whole page), then its full text. Go with your editorial instinct: a minute or two a pair is right. Your choices anchor the scale Claude builds from its own judgements.</p>
       <form className="namebox" onSubmit={e => { e.preventDefault(); const n = draftName.trim(); if (n) { remember('cj-judge', n); setName(n) } }}>
         <label htmlFor="who">Your name</label>
         <input id="who" value={draftName} onChange={e => setDraftName(e.target.value)} placeholder="e.g. James" autoFocus />
@@ -71,11 +74,12 @@ export default function Judge({ setId }: { setId: string }) {
       {next && !p && <p className="lede">You have judged every pair in this set. Thank you.</p>}
       {p && (
         <>
-          <p className="hint">Both pieces are cut to the same length, so ignore how much ground each covers. Judge the thinking and the writing separately: a piece can win one and lose the other.</p>
+          <p className="hint">Both pieces are shown in full and are of similar length: depth counts, padding does not. Judge each question separately: a piece can win one and lose another. Click a page image to see the whole page.</p>
           <div className="pair">
             {[p.left, p.right].map((s, i) => (
               <article key={s.n} className={`piece ${ideas === s.n ? 'ideas' : ''} ${writing === s.n ? 'writing' : ''}`}>
-                <div className="label">{i === 0 ? 'Left' : 'Right'}</div>
+                <div className="label">{i === 0 ? 'Left' : 'Right'}{s.words ? ` · ${s.words.toLocaleString('en-GB')} words` : ''}</div>
+                {s.top && <a className="shot" href={s.page || s.top} target="_blank" rel="noreferrer" title="Open the whole page"><img src={s.top} alt="The top of the page as published" /><span>Whole page ↗</span></a>}
                 <h2>{s.title}</h2>
                 <div className="text">{s.text.split(/\n{2,}/).map((para, k) => <p key={k}>{para}</p>)}</div>
               </article>
@@ -84,8 +88,9 @@ export default function Judge({ setId }: { setId: string }) {
           <div className="bar">
             <Choice label="Ideas: which has the more original, valuable thinking?" value={ideas} set={setIdeas} left={p.left.n} right={p.right.n} />
             <Choice label="Writing: which is better written?" value={writing} set={setWriting} left={p.left.n} right={p.right.n} />
+            {shots && <Choice label="Presentation: which is better presented?" value={presentation} set={setPresentation} left={p.left.n} right={p.right.n} />}
             <input className="note" value={note} onChange={e => setNote(e.target.value)} placeholder="Why, in a few words (optional)" />
-            <button className="go" disabled={busy || ideas == null || writing == null} onClick={submit}>{busy ? 'Saving…' : 'Save and next'}</button>
+            <button className="go" disabled={busy || ideas == null || writing == null || (shots && presentation == null)} onClick={submit}>{busy ? 'Saving…' : 'Save and next'}</button>
           </div>
         </>
       )}
@@ -109,7 +114,7 @@ const CSS = `
 :root { --bg:#f6f5f1; --card:#fff; --ink:#1b1d21; --muted:#6b6f76; --line:#e3e1db; --accent:#1f4e79; --chip:#eef2f6; --ideas:#b45309; --writing:#1f4e79; }
 @media (prefers-color-scheme: dark) { :root { --bg:#141518; --card:#1c1e22; --ink:#ececec; --muted:#9a9ea6; --line:#2c2f35; --accent:#8db8e6; --chip:#252a31; --ideas:#f0a35e; --writing:#8db8e6; } }
 body { background: var(--bg) !important; color: var(--ink) !important; }
-.wrap { max-width: 1320px; margin: 0 auto; padding: 24px 16px 140px; }
+.wrap { max-width: 1320px; margin: 0 auto; padding: 24px 16px 180px; }
 h1 { font-size: 22px; margin: 0; letter-spacing: -0.01em; }
 .stats { color: var(--muted); font-size: 13px; margin: 6px 0 0; }
 .stats a { color: var(--accent); }
@@ -123,9 +128,12 @@ button { font: inherit; font-size: 14px; padding: 8px 14px; border-radius: 6px; 
 .go:disabled { opacity: .45; cursor: default; }
 .pair { display: grid; grid-template-columns: 1fr 1fr; gap: 16px; }
 @media (max-width: 800px) { .pair { grid-template-columns: 1fr; } }
-.piece { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; max-height: 68vh; overflow-y: auto; position: relative; }
+.piece { background: var(--card); border: 1px solid var(--line); border-radius: 10px; padding: 16px 18px; max-height: 72vh; overflow-y: auto; position: relative; }
 .piece.ideas { box-shadow: inset 4px 0 0 var(--ideas); }
 .piece.writing { outline: 2px solid var(--writing); }
+.shot { display:block; position:relative; margin: 8px 0 12px; border:1px solid var(--line); border-radius: 6px; overflow:hidden; }
+.shot img { display:block; width:100%; height:auto; }
+.shot span { position:absolute; right:8px; bottom:8px; font-size:12px; background: var(--card); color: var(--ink); border:1px solid var(--line); border-radius: 999px; padding: 2px 8px; }
 .label { font-size: 11px; text-transform: uppercase; letter-spacing: .08em; color: var(--muted); }
 .piece h2 { font-size: 17px; line-height: 1.35; margin: 6px 0 12px; }
 .text p { font-size: 15px; line-height: 1.6; margin: 0 0 12px; max-width: 70ch; }

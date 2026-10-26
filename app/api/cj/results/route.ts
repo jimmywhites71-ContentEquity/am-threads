@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db, unauthorised } from '@/lib/db'
-import { managerName, type Question } from '@/lib/cj'
+import { managerName } from '@/lib/cj'
 import { latestSetId, loadSet } from '@/lib/cj-data'
 
 export const maxDuration = 60
@@ -15,7 +15,7 @@ export async function GET(req: NextRequest) {
   if (!data) return new NextResponse('No set', { status: 404 })
   const { set, items, report: r } = data
   const f = (x: number | null | undefined, pct = false) => x == null ? 'n/a' : pct ? `${Math.round(x * 100)}%` : x.toFixed(2)
-  const qs: Question[] = ['ideas', 'writing']
+  const qs = r.questions
   const lines: string[] = []
   lines.push(`# Comparative judgement: ${set.name}`, '', `Set \`${set.id}\` · ${items.length} pieces from ${new Set(items.map((i: any) => i.piece?.manager_id)).size} houses · ${data.pairs.length} pairs · updated ${new Date().toISOString().slice(0, 16).replace('T', ' ')} UTC`, '')
   lines.push('## Judges', '', ...Object.entries(r.judges).map(([j, v]) => `- ${j} (${v.kind}): ${v.judgements} judgements`), '')
@@ -24,14 +24,14 @@ export async function GET(req: NextRequest) {
     const ha = r.humanAgreement[g]?.[q]
     lines.push(`| ${g} | ${q} | ${f(r.scales[g][q].reliability)} | ${f(r.orderConsistency[g]?.[q], true)} | ${f(r.lengthCorrelation[g]?.[q])} | ${ha?.n ? `${f(ha.agree, true)} of ${ha.n}` : '–'} |`)
   }
-  lines.push('', `Sonnet vs Haiku rank correlation: ideas ${f(r.modelAgreement.ideas)}, writing ${f(r.modelAgreement.writing)}.`)
-  lines.push(`Ideas vs writing rank correlation: ${Object.entries(r.ideasWritingCorrelation).map(([g, v]) => `${g} ${f(v)}`).join(', ')}.`, '')
+  lines.push('', `Sonnet vs Haiku rank correlation: ${qs.map(q => `${q} ${f(r.modelAgreement[q])}`).join(', ')}.`)
+  lines.push(`Correlation between the questions: ${Object.entries(r.questionCorrelation).map(([g, v]) => `${g} (${Object.entries(v).map(([k, x]) => `${k} ${f(x)}`).join(', ')})`).join('; ')}.`, '')
   const main = r.scales.production ? 'production' : r.scales.sonnet ? 'sonnet' : Object.keys(r.scales)[0]
   if (main) for (const q of qs) {
     const s = r.scales[main][q]
     const order = items.map((_: any, i: number) => i).sort((a: number, b: number) => s.theta[b] - s.theta[a])
     const row = (i: number, k: number) => `| ${k + 1} | ${s.theta[i].toFixed(2)} ± ${s.se[i].toFixed(2)} | ${managerName(items[i].piece?.manager_id)} | [${(items[i].piece?.title || '').slice(0, 90)}](${items[i].piece?.url}) | ${items[i].word_count} |`
-    lines.push(`## ${q === 'ideas' ? 'Ideas' : 'Writing'}: top 10 and bottom 5 (${main} scale)`, '', '| Rank | Score | House | Piece | Words |', '|---|---|---|---|---|')
+    lines.push(`## ${q[0].toUpperCase() + q.slice(1)}: top 10 and bottom 5 (${main} scale)`, '', '| Rank | Score | House | Piece | Words |', '|---|---|---|---|---|')
     order.slice(0, 10).forEach((i: number, k: number) => lines.push(row(i, k)))
     lines.push('| … | | | | |')
     order.slice(-5).forEach((i: number, k: number) => lines.push(row(i, order.length - 5 + k)))

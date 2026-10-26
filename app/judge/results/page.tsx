@@ -1,7 +1,7 @@
 // Ideas & voice results: the scales built from the comparative judgements of one set.
 
 import { db } from '@/lib/db'
-import { managerName, type Question } from '@/lib/cj'
+import { QUESTIONS, managerName, reasonOf, winnerOf, type Question } from '@/lib/cj'
 import { latestSetId, loadSet } from '@/lib/cj-data'
 
 export const dynamic = 'force-dynamic'
@@ -19,7 +19,10 @@ export default async function Results({ searchParams }: { searchParams: { set?: 
   const { set, items, report: r, judgements } = data
   const groups = Object.keys(GROUPS).filter(g => r.scales[g])
   const scale = groups.includes(searchParams.scale || '') ? searchParams.scale! : groups[0]
-  const sort: Question = searchParams.sort === 'writing' ? 'writing' : 'ideas'
+  const qs = r.questions
+  const sort: Question = qs.includes(searchParams.sort as Question) ? searchParams.sort as Question : 'ideas'
+  const join = (f: (q: Question) => string) => qs.map(f).join(' · ')
+  const qnames = qs.map(q => QUESTIONS[q].label.toLowerCase()).join(' · ')
   if (!scale) return <div className="wrap"><style>{CSS}</style><h1>{set.name}</h1><p>No judgements yet.</p></div>
   const S = r.scales[scale]
   const order = items.map((_: any, i: number) => i).sort((a: number, b: number) => S[sort].theta[b] - S[sort].theta[a])
@@ -27,8 +30,8 @@ export default async function Results({ searchParams }: { searchParams: { set?: 
   const ai = judgements.filter(j => j.judge_kind === 'ai')
   // One reason each piece won on, from the scale's judges
   const reasonFor = (n: number, q: Question) => {
-    const js = judgements.filter(j => (q === 'ideas' ? j.ideas_winner : j.writing_winner) === n && (scale === 'human' ? j.judge_kind === 'human' : scale === 'haiku' ? /haiku/.test(j.judge) : scale === 'sonnet' ? /sonnet/.test(j.judge) : j.judge_kind === 'human' || /sonnet/.test(j.judge)))
-    return (q === 'ideas' ? js.map(j => j.ideas_reason) : js.map(j => j.writing_reason)).filter(Boolean)[0] as string | undefined
+    const js = judgements.filter(j => winnerOf(j, q) === n && (scale === 'human' ? j.judge_kind === 'human' : scale === 'haiku' ? /haiku/.test(j.judge) : scale === 'sonnet' ? /sonnet/.test(j.judge) : j.judge_kind === 'human' || /sonnet/.test(j.judge)))
+    return js.map(j => reasonOf(j, q)).filter(Boolean)[0] as string | undefined
   }
   const agree = r.humanAgreement.sonnet
 
@@ -47,16 +50,16 @@ export default async function Results({ searchParams }: { searchParams: { set?: 
       </header>
 
       <section className="tiles">
-        <Tile label="Reliability (ideas · writing)" value={`${two(S.ideas.reliability)} · ${two(S.writing.reliability)}`} note="0.7 or more is a dependable scale" />
-        <Tile label="Sonnet agrees with the team" value={agree ? `${pct(agree.ideas.agree)} · ${pct(agree.writing.agree)}` : '–'} note={agree?.ideas.n ? `on ${agree.ideas.n} team judgements` : 'needs team judgements'} />
-        <Tile label="Same winner both ways round" value={`${pct(r.orderConsistency.sonnet?.ideas)} · ${pct(r.orderConsistency.sonnet?.writing)}`} note="Sonnet; position should not matter" />
-        <Tile label="Tracks length? (ideas · writing)" value={`${two(r.lengthCorrelation[scale]?.ideas)} · ${two(r.lengthCorrelation[scale]?.writing)}`} note="rank correlation with word count; near 0 is good" />
+        <Tile label={`Reliability (${qnames})`} value={join(q => two(S[q]?.reliability))} note="0.7 or more is a dependable scale" />
+        <Tile label="Sonnet agrees with the team" value={agree ? join(q => pct(agree[q]?.agree)) : '–'} note={agree?.ideas.n ? `on ${agree.ideas.n} team judgements` : 'needs team judgements'} />
+        <Tile label="Same winner both ways round" value={join(q => pct(r.orderConsistency.sonnet?.[q]))} note="Sonnet; position should not matter" />
+        <Tile label="Tracks length?" value={join(q => two(r.lengthCorrelation[scale]?.[q]))} note="rank correlation with word count; compare with the team's" />
       </section>
 
       <nav className="tabs">
         Scale: {groups.map(g => <a key={g} className={g === scale ? 'on' : ''} href={link({ scale: g })}>{GROUPS[g]}</a>)}
         <span className="sep" />
-        Rank by: {(['ideas', 'writing'] as Question[]).map(q => <a key={q} className={q === sort ? 'on' : ''} href={link({ sort: q })}>{q === 'ideas' ? 'Ideas' : 'Writing'}</a>)}
+        Rank by: {qs.map(q => <a key={q} className={q === sort ? 'on' : ''} href={link({ sort: q })}>{QUESTIONS[q].label}</a>)}
       </nav>
 
       <figure className="chart">
@@ -73,7 +76,7 @@ export default async function Results({ searchParams }: { searchParams: { set?: 
       </figure>
 
       <table>
-        <thead><tr><th>#</th><th>Piece</th><th>Ideas</th><th>Writing</th><th>Words</th><th>Why it won (one judge's reason)</th></tr></thead>
+        <thead><tr><th>#</th><th>Piece</th>{qs.map(q => <th key={q}>{QUESTIONS[q].label}</th>)}<th>Words</th><th>Why it won (one judge's reason)</th></tr></thead>
         <tbody>
           {order.map((i: number, k: number) => {
             const it: any = items[i]
@@ -81,8 +84,7 @@ export default async function Results({ searchParams }: { searchParams: { set?: 
               <tr key={i}>
                 <td>{k + 1}</td>
                 <td><div className="house">{managerName(it.piece?.manager_id)}</div><a href={it.piece?.url} target="_blank" rel="noreferrer">{it.piece?.title}</a></td>
-                <td className="num"><Bar v={S.ideas.theta[i]} se={S.ideas.se[i]} />{S.ideas.theta[i].toFixed(2)}</td>
-                <td className="num"><Bar v={S.writing.theta[i]} se={S.writing.se[i]} />{S.writing.theta[i].toFixed(2)}</td>
+                {qs.map(q => <td key={q} className="num"><Bar v={S[q].theta[i]} se={S[q].se[i]} />{S[q].theta[i].toFixed(2)}</td>)}
                 <td className="num">{it.word_count?.toLocaleString('en-GB')}</td>
                 <td className="why">{reasonFor(i, sort) || '–'}</td>
               </tr>
@@ -127,5 +129,5 @@ th { font-size: 12px; color: var(--muted); font-weight: 500; } .num { white-spac
 .why { color: var(--muted); max-width: 340px; }
 .bar { width: 80px; height: 10px; vertical-align: middle; margin-right: 6px; } .bar .mid { stroke: var(--line); } .bar .ci { stroke: var(--muted); stroke-width: 1.5; } .bar circle { fill: var(--accent); }
 .foot { font-size: 12px; color: var(--muted); margin-top: 12px; max-width: 760px; }
-@media (max-width: 700px) { .why, th:nth-child(6) { display: none; } }
+@media (max-width: 700px) { .why, th:last-child { display: none; } }
 `

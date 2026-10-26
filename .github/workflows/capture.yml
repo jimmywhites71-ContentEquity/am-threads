@@ -15,6 +15,10 @@ on:
         description: 'Pieces to capture'
         required: false
         default: '60'
+      set:
+        description: 'A judging set id: take its judging screenshots instead'
+        required: false
+        default: ''
 
 jobs:
   capture:
@@ -34,7 +38,8 @@ jobs:
           BOT_CONTACT_URL: ${{ vars.BOT_CONTACT_URL }}
         run: |
           set -o pipefail
-          npm run capture -- --limit ${{ github.event.inputs.limit || '60' }} 2>&1 | tee capture.log
+          if [ -n "${{ github.event.inputs.set }}" ]; then npm run capture -- --set "${{ github.event.inputs.set }}" 2>&1 | tee capture.log
+          else npm run capture -- --limit ${{ github.event.inputs.limit || '60' }} 2>&1 | tee capture.log; fi
       - name: File the result
         if: always()
         env:

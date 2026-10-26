@@ -4,9 +4,10 @@ import { anonymise, makePairs } from '@/lib/cj'
 
 export const maxDuration = 120
 
-// Creates a comparative-judgement set: up to ?n=60 recent pieces on one theme (?theme=, or the theme
-// with the most comparable pieces across houses), at most ?per_house=3 from any house, 500-4,000
-// words, cut to ?words=1200 and anonymised, with ?rounds=8 comparisons per piece.
+// Creates a comparative-judgement set: up to ?n=60 recent pieces on one theme (?theme=, several joined
+// with |, or the theme with the most comparable pieces across houses), at most ?per_house=3 from any
+// house, 700-6,000 words, shown in full up to ?words=4000 and anonymised, with ?rounds=8 comparisons
+// per piece against pieces of similar length. Screenshots come from scripts/capture.ts --set <id>.
 // ?dry=1 lists the candidate themes without creating anything.
 export async function POST(req: NextRequest) {
   const denied = unauthorised(req); if (denied) return denied
@@ -14,7 +15,7 @@ export async function POST(req: NextRequest) {
   const n = Math.min(Number(q.get('n') || 60), 120)
   const days = Number(q.get('days') || 60)
   const perHouse = Number(q.get('per_house') || 3)
-  const words = Number(q.get('words') || 1200)
+  const words = Number(q.get('words') || 4000)
   const rounds = Number(q.get('rounds') || 8)
   const sb = db()
   const since = new Date(Date.now() - days * 864e5).toISOString()
@@ -22,7 +23,7 @@ export async function POST(req: NextRequest) {
   const { data: rows, error } = await sb.from('pieces')
     .select('id, manager_id, title, url, primary_theme, content_purpose, word_count, published_at')
     .eq('status', 'read').in('format', ['article', 'outlook', 'research paper'])
-    .gte('word_count', 700).lte('word_count', 4000).gte('published_at', since).not('primary_theme', 'is', null)
+    .gte('word_count', 700).lte('word_count', 6000).gte('published_at', since).not('primary_theme', 'is', null)
     .order('published_at', { ascending: false }).limit(20000)
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
@@ -66,7 +67,8 @@ export async function POST(req: NextRequest) {
 
   const month = new Date().toISOString().slice(0, 7)
   const id = q.get('id') || `cj-${month}-${theme.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`
-  const pairs = makePairs(items.length, rounds, Date.now() % 100000)
+  // Like with like: each piece is paired with pieces of similar length (James, 26 Oct)
+  const pairs = makePairs(items.length, rounds, Date.now() % 100000, items.map(i => i.word_count || 0))
   const { error: sErr } = await sb.from('cj_sets').insert({
     id, name: `${theme}, ${new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })} (pilot)`, theme,
     params: { days, per_house: perHouse, words, rounds, purposes, pairs, created_from: candidates.slice(0, 10) },
