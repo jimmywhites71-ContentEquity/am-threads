@@ -15,6 +15,7 @@ jobs:
         with: { node-version: 22 }
       - run: npm install --no-audit --no-fund @supabase/supabase-js
       - env:
+          GH_TOKEN: ${{ github.token }}
           NEXT_PUBLIC_SUPABASE_URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
           SUPABASE_SERVICE_ROLE_KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
         run: |
@@ -30,5 +31,6 @@ jobs:
             }
           })()"
           ls -la previews
-          git config user.name preview-bot; git config user.email preview@users.noreply.github.com
-          git checkout --orphan judge-previews; git rm -rq --cached . ; git add previews; git commit -qm previews; git push -f origin judge-previews
+          gh api -X DELETE repos/$GITHUB_REPOSITORY/git/refs/heads/judge-previews || true
+          gh api repos/$GITHUB_REPOSITORY/git/refs -f ref=refs/heads/judge-previews -f sha=$GITHUB_SHA
+          for f in previews/*.jpg; do base64 -w0 "$f" > b64.txt; gh api -X PUT "repos/$GITHUB_REPOSITORY/contents/$f" -f message="preview" -f branch=judge-previews -F content=@b64.txt >/dev/null; done
