@@ -32,7 +32,7 @@ export async function POST(req: NextRequest) {
   // ?purposes=thought leadership,house view keeps only those content purposes (the tagger's field)
   const purposes = (q.get('purposes') || '').split(',').map(x => x.trim().toLowerCase()).filter(Boolean)
   const usable = (rows || []).filter(r => (!purposes.length || purposes.includes(String(r.content_purpose || '').toLowerCase())) && !/podcast|webinar|video|episode/i.test(`${r.url} ${r.title}`)
-    && !(String(r.title).match(/\b20\d\d\b/g) || []).some(y => Number(y) < year - 1))
+    && !(`${r.title} ${r.url}`.match(/\b20\d\d\b/g) || []).some(y => Number(y) < year - 1))
   // Comparable pieces per theme, capped per house
   const byTheme = new Map<string, typeof rows>()
   for (const r of usable) byTheme.set(r.primary_theme!, [...(byTheme.get(r.primary_theme!) || []), r])
