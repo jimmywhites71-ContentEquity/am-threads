@@ -66,7 +66,12 @@ export async function POST(req: NextRequest) {
   if (items.length % 2) items.pop()
 
   const month = new Date().toISOString().slice(0, 7)
-  const id = q.get('id') || `cj-${month}-${theme.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`
+  const base = q.get('id') || `cj-${month}-${theme!.toLowerCase().replace(/[^a-z0-9]+/g, '-').replace(/^-|-$/g, '')}`
+  // A second set on the same theme in the same month gets -v2, -v3…
+  const { data: taken } = await sb.from('cj_sets').select('id').like('id', `${base}%`)
+  const ids = new Set((taken || []).map(t => t.id))
+  let id = base
+  for (let k = 2; ids.has(id); k++) id = `${base}-v${k}`
   // Like with like: each piece is paired with pieces of similar length (James, 26 Oct)
   const pairs = makePairs(items.length, rounds, Date.now() % 100000, items.map(i => i.word_count || 0))
   const { error: sErr } = await sb.from('cj_sets').insert({
