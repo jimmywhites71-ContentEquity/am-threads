@@ -28,6 +28,13 @@ export async function GET(req: NextRequest) {
     const srcs = SOURCES.filter(s => s.manager === m.id && s.active !== false).map(s => s.id.replace(`${m.id}-`, '')).join(', ')
     summary.push(`| ${m.name} | ${all.length} | ${recent} | ${all.length - dated.length} | ${dated[0]?.published_at?.slice(0, 10) || '–'} | ${Array.from(regions.entries()).sort((a, b) => b[1] - a[1]).map(([g, c]) => `${g} ${c}`).join(', ') || '–'} | ${srcs} |`)
     detail.push(`### ${m.name}`, '', ...dated.slice(0, n).map(r => `- ${r.published_at?.slice(0, 10)} · ${r.status} · ${r.format || ''} · ${r.word_count ?? '?'} words · [${String(r.title || '(no title)').slice(0, 90)}](${r.url})`))
+    // What happened to the addresses we found: read, skipped as too old, failed, waiting
+    const { data: eds } = await sb.from('editions').select('url, status, error, lastmod').eq('manager_id', m.id).limit(20000)
+    const byStatus = new Map<string, number>()
+    for (const e of eds || []) byStatus.set(e.status, (byStatus.get(e.status) || 0) + 1)
+    detail.push(`- Addresses found: ${(eds || []).length} (${Array.from(byStatus.entries()).map(([k, v]) => `${k} ${v}`).join(', ')})`)
+    const probe = q.get('probe')
+    if (probe) for (const e of (eds || []).filter(e => e.url.includes(probe)).slice(0, 10)) detail.push(`- probe: ${e.status} · ${e.error || ''} · ${e.url}`)
     const undated = all.filter(r => !r.published_at).slice(0, 3)
     if (undated.length) detail.push(...undated.map(r => `- undated · ${r.status} · [${String(r.title || '(no title)').slice(0, 90)}](${r.url})`))
     detail.push('')

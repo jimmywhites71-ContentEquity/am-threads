@@ -7,6 +7,7 @@ on:
     inputs:
       managers: { description: 'House ids, comma separated (blank = all wave-1 houses)', required: false, default: '' }
       n: { description: 'Newest pieces listed per house', required: false, default: '8' }
+      probe: { description: 'Show addresses containing this text, with their status', required: false, default: '' }
 
 permissions:
   issues: write
@@ -21,7 +22,7 @@ jobs:
     steps:
       - run: |
           SITE="${SITE_RAW%/}"
-          curl -sS -G "$SITE/api/audit" --data-urlencode "managers=${{ inputs.managers }}" --data-urlencode "n=${{ inputs.n }}" -H "$AUTH" --max-time 120 -o out.md || echo "The audit could not be read." > out.md
+          curl -sS -G "$SITE/api/audit" --data-urlencode "managers=${{ inputs.managers }}" --data-urlencode "n=${{ inputs.n }}" --data-urlencode "probe=${{ inputs.probe }}" -H "$AUTH" --max-time 120 -o out.md || echo "The audit could not be read." > out.md
           head -c 65000 out.md > body.md
           n=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "Source audit in:title" --json number,title --jq '[.[] | select(.title == "Source audit")][0].number // empty')
           if [ -n "$n" ]; then gh issue edit "$n" --repo "$GITHUB_REPOSITORY" --body-file body.md; else gh issue create --repo "$GITHUB_REPOSITORY" --title "Source audit" --body-file body.md; fi
