@@ -47,9 +47,17 @@ jobs:
           offset=0
           while [ -n "$offset" ] && [ "$offset" != "null" ]; do
             echo "discover offset $offset" >> run.log
-            curl -sS -L -X POST "$SITE/api/discover?days=${{ github.event.inputs.days || '14' }}&wave=${{ github.event.inputs.wave || '1' }}&offset=$offset&batch=12&approve=${{ github.event.inputs.approve_backfill || 'no' }}" -H "$AUTH" --max-time 300 -o discover.json || break
+            curl -sS -L -X POST "$SITE/api/discover?days=${{ github.event.inputs.days || '14' }}&wave=${{ github.event.inputs.wave || '1' }}&offset=$offset&batch=8&approve=${{ github.event.inputs.approve_backfill || 'no' }}" -H "$AUTH" --max-time 300 -o discover.json || echo '{}' > discover.json
             cat discover.json; echo
-            offset=$(jq -r '.next_offset' discover.json)
+            if jq -e 'has("next_offset")' discover.json >/dev/null 2>&1; then
+              jq -c '{offset, next_offset, total_sources, errors: [.sources | to_entries[] | select(.value.error) | .key]}' discover.json >> run.log
+              offset=$(jq -r '.next_offset' discover.json)
+            else
+              # A failed call (time-out or error page): note it and move on to the next page of sources
+              echo "discover offset $offset failed; moving on" >> run.log
+              dfails=$(( ${dfails:-0} + 1 )); [ "$dfails" -ge 4 ] && break
+              offset=$(( offset + 8 ))
+            fi
           done
       - name: Read and measure
         run: |
