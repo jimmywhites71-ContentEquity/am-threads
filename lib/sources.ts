@@ -263,6 +263,10 @@ const FIRST_SOURCES: ManagerSource[] = [
   S('aqr', { id: 'aqr-insights', name: 'Research & Perspectives', feed_url: 'https://www.aqr.com/sitemap.xml', content_type: 'article', kind: 'sitemap', pageInclude: '/Insights/(Research|Perspectives)/[^?#]+', verified: false }),
   S('bridgewater', { id: 'bridgewater-research', name: 'Research & Insights', feed_url: 'https://www.bridgewater.com/sitemap.xml', content_type: 'article', kind: 'sitemap', pageInclude: '/research-and-insights/[^?#]+', verified: false }),
   S('allianzgi', { id: 'allianzgi-uk', name: 'Insights (UK)', feed_url: 'https://www.allianzgi.com/en-gb/sitemap.xml', content_type: 'article', kind: 'sitemap', pageInclude: '/en(-gb)?/[^?#]*insights/[^?#]+', pageExclude: NOT_CONTENT, verified: false }),
+  // AllianceBernstein's UK (EMEA) editions, alongside its global/US site (James, 4 Nov: EMEA is the
+  // edition Content Equity works with). Same pieces are merged with their US editions by slug.
+  S('alliancebernstein', { id: 'alliancebernstein-uk-inst', name: 'Insights (UK institutional)', feed_url: 'https://www.alliancebernstein.com/gb/en-gb/institutions.sitemap.xml', content_type: 'article', kind: 'sitemap', pageInclude: '/gb/en-gb/institutions/insights/[^?#]+/[^?#]+\\.html', pageExclude: NOT_CONTENT, verified: false }),
+  S('alliancebernstein', { id: 'alliancebernstein-uk-adv', name: 'Insights (UK advisers)', feed_url: 'https://www.alliancebernstein.com/gb/en-gb/adviser.sitemap.xml', content_type: 'article', kind: 'sitemap', pageInclude: '/gb/en-gb/adviser/insights/[^?#]+/[^?#]+\\.html', pageExclude: NOT_CONTENT, verified: false }),
 ]
 
 // House-specific settings found by the source check (17 Oct 2026)

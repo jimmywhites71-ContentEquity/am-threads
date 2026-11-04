@@ -41,7 +41,10 @@ export async function POST(req: NextRequest) {
   await Promise.all(page.map(async source => {
     const diag: Diagnostics = { roots: [], unreadable: [], entries: 0, in_window: 0, undated: 0, unmatched_sample: [] }
     try {
-      const found = await discover(source, since, { diag })
+      const found = await discover(source, since, {
+        diag,
+        known: async urls => new Set(((await sb.from('editions').select('url').in('url', urls)).data || []).map(r => r.url as string)),
+      })
       if (dry) {
         report[source.id] = { found: found.length, unique: diag.unique_pieces, sample: found.slice(0, 3).map(f => f.url),
           ...(found.length ? {} : { diag: { robots: diag.robots, roots: diag.roots.slice(0, 3), entries: diag.entries, in_window: diag.in_window, unmatched_sample: diag.unmatched_sample, unreadable: diag.unreadable.slice(0, 3) } }) }

@@ -172,7 +172,7 @@ async function readSitemapTree(roots: string[], since: Date | null, exclude: Reg
 }
 
 /** Pages from one source published (or changed) since `since`, newest first */
-export async function discover(source: ManagerSource, since: Date, opts: { maxChildSitemaps?: number; maxPages?: number; maxUndated?: number; diag?: Diagnostics } = {}): Promise<Discovered[]> {
+export async function discover(source: ManagerSource, since: Date, opts: { maxChildSitemaps?: number; maxPages?: number; maxUndated?: number; diag?: Diagnostics; /** addresses already queued or read, so undated ones already seen do not use up the cap */ known?: (urls: string[]) => Promise<Set<string>> } = {}): Promise<Discovered[]> {
   const include = regex(source.pageInclude)
   const exclude = regex(source.pageExclude)
   const keep = (url: string) => {
@@ -239,7 +239,33 @@ export async function discover(source: ManagerSource, since: Date, opts: { maxCh
   // Dated pages, newest first, then a bounded number of undated ones (their own dates are checked
   // when read, and the next run picks up more)
   dated.sort((a, b) => (b.lastmod || '').localeCompare(a.lastmod || ''))
-  const out = [...dated, ...undated.slice(0, opts.maxUndated ?? 300)].slice(0, opts.maxPages || 3000)
+  // Undated addresses (sitemaps without dates, or dates ignored as stale): newest first as far as
+  // the address shows it (a year, and a month name, in the address), then later in the sitemap
+  // before earlier, since sites usually add new pages at the end. Addresses already seen are left
+  // out before the cap, so each run moves on to new pages instead of re-offering the same 300
+  // (which kept 7IM, Capital Group, T. Rowe Price and others frozen; found 4 Nov).
+  const ranked = undated.map((d, i) => ({ d, i, hint: dateHint(d.url) })).sort((a, b) => b.hint - a.hint || b.i - a.i).map(x => x.d)
+  let fresh = ranked
+  if (opts.known && ranked.length) {
+    const seenUrls = new Set<string>()
+    for (let k = 0; k < ranked.length; k += 500) for (const u of await opts.known(ranked.slice(k, k + 500).map(d => d.url))) seenUrls.add(u)
+    fresh = ranked.filter(d => !seenUrls.has(d.url))
+    if (diag) (diag as any).undated_already_seen = ranked.length - fresh.length
+  }
+  const out = [...dated, ...fresh.slice(0, opts.maxUndated ?? 300)].slice(0, opts.maxPages || 3000)
   if (diag) diag.unique_pieces = new Set(out.map(d => slugOf(d.url))).size
   return out
+}
+
+const MONTHS = ['jan', 'feb', 'mar', 'apr', 'may', 'jun', 'jul', 'aug', 'sep', 'oct', 'nov', 'dec']
+/** How recent an address looks: year × 100 + month, from a 20xx year and a month name or /yyyy/mm/ in it; 0 if none */
+export function dateHint(url: string): number {
+  const path = url.toLowerCase()
+  const ym = /\/(20\d\d)\/(0?[1-9]|1[0-2])\//.exec(path)
+  if (ym) return Number(ym[1]) * 100 + Number(ym[2])
+  const years = (path.match(/(?<!\d)20\d\d(?!\d)/g) || []).map(Number).filter(y => y >= 2015 && y <= 2100)
+  if (!years.length) return 0
+  const year = Math.max(...years)
+  const m = MONTHS.findIndex(mo => new RegExp(`(^|[^a-z])${mo}[a-z]*([^a-z]|$)`).test(path.split('/').pop() || ''))
+  return year * 100 + (m >= 0 ? m + 1 : 0)
 }

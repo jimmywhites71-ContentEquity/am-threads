@@ -227,3 +227,10 @@ test('cj: matched pairs compare pieces of similar length', () => {
   const gap = pairs.reduce((s, [a, b]) => s + Math.abs(a - b), 0) / pairs.length
   assert.ok(gap < 8, `mean rank gap ${gap}`)
 })
+
+import { dateHint } from '../lib/collect'
+test('collect: date hints rank newer addresses first', () => {
+  assert.ok(dateHint('https://x.com/news-views/quarterly-rebalance-commentary-may-2026/') > dateHint('https://x.com/news-views/quarterly-rebalance-commentary-november-2025/'))
+  assert.equal(dateHint('https://x.com/blog/2026/02/18/hello/'), 202602)
+  assert.equal(dateHint('https://x.com/insights/no-date-here/'), 0)
+})

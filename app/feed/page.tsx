@@ -7,7 +7,9 @@ import { ASSET_CLASS_NAMES, FORMATS, THEME_PARENTS } from '@/lib/taxonomy'
 
 export const dynamic = 'force-dynamic'
 
-type Search = { manager?: string; asset?: string; theme?: string; format?: string; q?: string; page?: string }
+type Search = { manager?: string; asset?: string; theme?: string; format?: string; region?: string; q?: string; page?: string }
+// Editions: where a piece was published (one piece can have several regional editions)
+const EDITIONS = ['UK', 'US', 'Global', 'Europe', 'Germany & Austria', 'France', 'Italy', 'Spain', 'Netherlands', 'Switzerland', 'Canada', 'APAC']
 const PER_PAGE = 60
 
 function fmtDate(d: string | null) {
@@ -30,6 +32,7 @@ export default async function Feed({ searchParams }: { searchParams: Search }) {
   if (searchParams.asset) q = q.contains('asset_classes', [searchParams.asset])
   if (searchParams.theme) q = q.or(`primary_theme.eq.${searchParams.theme},secondary_themes.cs.{"${searchParams.theme}"},subject_regions.cs.{"${searchParams.theme}"}`)
   if (searchParams.format) q = q.eq('format', searchParams.format)
+  if (searchParams.region) q = q.contains('regions', [searchParams.region])
   if (searchParams.q) q = q.ilike('title', `%${searchParams.q.replace(/[%_,()]/g, ' ')}%`)
   const { data: pieces, count, error } = await q
 
@@ -57,7 +60,8 @@ export default async function Feed({ searchParams }: { searchParams: Search }) {
         <input name="q" placeholder="Search titles" defaultValue={searchParams.q || ''} />
         <select name="manager" defaultValue={searchParams.manager || ''}>
           <option value="">All managers</option>
-          {[...MANAGERS].sort((a, b) => a.name.localeCompare(b.name)).map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
+          {/* Only houses we collect from (wave 1); wave 2 is on the roster but not collected yet */}
+          {[...MANAGERS].filter(m => m.wave === 1).sort((a, b) => a.name.localeCompare(b.name)).map(m => <option key={m.id} value={m.id}>{m.name}</option>)}
         </select>
         <select name="asset" defaultValue={searchParams.asset || ''}>
           <option value="">All asset classes</option>
@@ -66,6 +70,10 @@ export default async function Feed({ searchParams }: { searchParams: Search }) {
         <select name="theme" defaultValue={searchParams.theme || ''}>
           <option value="">All themes</option>
           {THEME_PARENTS.map(p => <optgroup key={p.name} label={p.name}>{p.children.map(c => <option key={c.name}>{c.name}</option>)}</optgroup>)}
+        </select>
+        <select name="region" defaultValue={searchParams.region || ''}>
+          <option value="">All editions</option>
+          {EDITIONS.map(r => <option key={r} value={r}>{r} edition</option>)}
         </select>
         <select name="format" defaultValue={searchParams.format || ''}>
           <option value="">All formats</option>
