@@ -18,7 +18,7 @@ jobs:
             echo "== $u"
             curl -sSL -m 30 -A "$UA" "$u" > s.xml || true
             # follow one level of sitemap index
-            if grep -q "<sitemapindex" s.xml; then for k in $(grep -oE "<loc>[^<]+" s.xml | sed 's/<loc>//' | head -20); do curl -sSL -m 30 -A "$UA" "$k"; done > all.xml; else cp s.xml all.xml; fi
+            if grep -q "<sitemapindex" s.xml; then echo "child sitemaps: $(grep -c '<loc>' s.xml)"; grep -oE "<loc>[^<]+" s.xml | sed 's/<loc>//' | head -80; for k in $(grep -oE "<loc>[^<]+" s.xml | sed 's/<loc>//' | head -20); do curl -sSL -m 30 -A "$UA" "$k"; done > all.xml; else cp s.xml all.xml; fi
             grep -oE "<loc>[^<]+" all.xml | sed 's/<loc>//' | grep -vE "/(en|de|fr|it|es|nl)-[a-z]{2}/" > locs.txt
             echo "addresses: $(wc -l < locs.txt)"
             awk -F/ '{print $4"/"$5}' locs.txt | sort | uniq -c | sort -rn | head -25
