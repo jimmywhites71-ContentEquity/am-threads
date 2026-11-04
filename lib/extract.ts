@@ -90,6 +90,73 @@ function jsonLd(root: HTMLElement): any[] {
   return out
 }
 
+// ── Publication date ──────────────────────────────────────────────────────
+// In order of trust: structured data, meta tags, microdata, <time>, a date written near the headline,
+// then a year and month in the address. Many houses' sitemaps carry no dates, so without the later
+// steps their pieces had no date at all (16 houses, about 4,000 pieces; found 4 Nov).
+
+const MONTH_NAMES = ['january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december']
+const MON = '(jan(?:uary)?|feb(?:ruary)?|mar(?:ch)?|apr(?:il)?|may|june?|july?|aug(?:ust)?|sep(?:t(?:ember)?)?|oct(?:ober)?|nov(?:ember)?|dec(?:ember)?)'
+const TEXT_DATES: [RegExp, (m: RegExpExecArray) => [number, number, number]][] = [
+  [new RegExp(`\\b(\\d{1,2})(?:st|nd|rd|th)?[\\s-]+${MON}\\.?,?[\\s-]+(20\\d\\d)\\b`, 'i'), m => [Number(m[3]), monthOf(m[2]), Number(m[1])]],
+  [new RegExp(`\\b${MON}\\.?\\s+(\\d{1,2})(?:st|nd|rd|th)?,?\\s+(20\\d\\d)\\b`, 'i'), m => [Number(m[3]), monthOf(m[1]), Number(m[2])]],
+  [/\b(20\d\d)-(\d{2})-(\d{2})\b/, m => [Number(m[1]), Number(m[2]), Number(m[3])]],
+  [/\b(\d{1,2})[./-](\d{1,2})[./-](20\d\d)\b/, m => [Number(m[3]), Number(m[2]), Number(m[1])]],   // day first (UK and Europe)
+]
+function monthOf(s: string) { const k = s.slice(0, 3).toLowerCase(); return MONTH_NAMES.findIndex(n => n.startsWith(k)) + 1 }
+
+function validDate(v: string | Date | null | undefined): string | null {
+  if (!v) return null
+  const d = v instanceof Date ? v : new Date(String(v).trim())
+  if (isNaN(d.getTime())) return null
+  if (d.getTime() > Date.now() + 864e5 || d.getUTCFullYear() < 2005) return null
+  return d.toISOString()
+}
+
+/** The first written date in some text, as an ISO date */
+export function dateInText(text: string): string | null {
+  let best: { at: number; iso: string } | null = null
+  for (const [re, parts] of TEXT_DATES) {
+    const m = re.exec(text)
+    if (!m) continue
+    const [y, mo, d] = parts(m)
+    if (!(mo >= 1 && mo <= 12 && d >= 1 && d <= 31)) continue
+    const iso = validDate(new Date(Date.UTC(y, mo - 1, d)))
+    if (iso && (!best || m.index < best.at)) best = { at: m.index, iso }
+  }
+  return best?.iso || null
+}
+
+function findPublished(root: HTMLElement, ld: any[], article: any, url: string): string | null {
+  const fromLd = validDate(article.datePublished) || validDate(ld.map(o => o.datePublished || o.dateCreated).find(Boolean))
+  if (fromLd) return fromLd
+  const fromMeta = validDate(metaContent(root, ['article:published_time', 'og:published_time', 'datePublished', 'date', 'dc.date', 'dc.date.issued', 'DC.date.issued', 'citation_publication_date',
+    'publish-date', 'publish_date', 'publishdate', 'pubdate', 'publication_date', 'date_published', 'parsely-pub-date', 'sailthru.date', 'article.published']))
+  if (fromMeta) return fromMeta
+  const micro = root.querySelector('[itemprop="datePublished"]')
+  const fromMicro = validDate(micro?.getAttribute('content') || micro?.getAttribute('datetime')) || (micro ? dateInText(micro.textContent) : null)
+  if (fromMicro) return fromMicro
+  for (const t of root.querySelectorAll('time')) {
+    const v = validDate(t.getAttribute('datetime')) || dateInText(t.textContent)
+    if (v) return v
+  }
+  // A date written near the headline (bylines usually sit just above or below it)
+  const main = mainOf(root)
+  const text = (main.structuredText || main.textContent).replace(/\s+/g, ' ')
+  const h1 = (root.querySelector('h1')?.textContent || '').replace(/\s+/g, ' ').trim()
+  const at = h1 ? text.indexOf(h1.slice(0, 40)) : -1
+  const near = at >= 0 ? text.slice(Math.max(0, at - 300), at + h1.length + 600) : text.slice(0, 1500)
+  const fromText = dateInText(near)
+  if (fromText) return fromText
+  // A year and month in the address (/2026/02/, or "…-may-2026")
+  const path = url.toLowerCase()
+  const ym = /\/(20\d\d)\/(0?[1-9]|1[0-2])\//.exec(path)
+  if (ym) return validDate(new Date(Date.UTC(Number(ym[1]), Number(ym[2]) - 1, 1)))
+  const named = new RegExp(`${MON}[-_](20\\d\\d)(?!\\d)`, 'i').exec(path.split('/').filter(Boolean).pop() || '')
+  if (named) return validDate(new Date(Date.UTC(Number(named[2]), monthOf(named[1]) - 1, 1)))
+  return null
+}
+
 /** The element holding the piece: <article>, <main>, role=main, else the largest text block */
 function mainOf(root: HTMLElement): HTMLElement {
   const candidates = [...root.querySelectorAll('article'), ...root.querySelectorAll('main'), ...root.querySelectorAll('[role="main"]')]
@@ -136,10 +203,7 @@ export function extractFromHtml(html: string, url: string): Extracted {
   const description = metaContent(root, ['og:description', 'description', 'twitter:description']) || ''
   const canonical = abs(root.querySelector('link[rel="canonical"]')?.getAttribute('href'), url)
 
-  const dateStr = article.datePublished || metaContent(root, ['article:published_time', 'date', 'dc.date', 'publish-date', 'publication_date'])
-    || root.querySelector('time[datetime]')?.getAttribute('datetime')
-  const d = dateStr ? new Date(dateStr) : null
-  const published_at = d && !isNaN(d.getTime()) && d.getTime() <= Date.now() + 864e5 ? d.toISOString() : null
+  const published_at = findPublished(root, ld, article, url)
 
   const ldAuthors = ([] as any[]).concat(article.author || []).map(a => typeof a === 'string' ? a : a?.name).filter(Boolean)
   const metaAuthor = metaContent(root, ['author', 'article:author'])

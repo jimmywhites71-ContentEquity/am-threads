@@ -1,0 +1,33 @@
+name: Re-date pieces
+
+# Re-reads pieces with no publication date using the fuller date-finding, until none are left.
+# No AI calls: costs nothing. Files a summary to the "Pipeline status" issue's run log is not
+# touched; the result is printed and filed to the "Source audit" issue by a follow-up audit run.
+on:
+  workflow_dispatch:
+    inputs:
+      manager: { description: 'One house id (blank = all)', required: false, default: '' }
+
+permissions:
+  issues: write
+
+jobs:
+  redate:
+    runs-on: ubuntu-latest
+    timeout-minutes: 120
+    env:
+      SITE_RAW: ${{ vars.SITE_URL }}
+      AUTH: 'Authorization: Bearer ${{ secrets.PIPELINE_API_KEY }}'
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - run: |
+          SITE="${SITE_RAW%/}"
+          : > log.txt
+          for i in $(seq 1 80); do
+            curl -sS -X POST "$SITE/api/redate?manager=${{ inputs.manager }}" -H "$AUTH" --max-time 300 -o r.json || true
+            cat r.json >> log.txt; echo >> log.txt
+            python3 -c "import json,sys; d=json.load(open('r.json')); print({k: d.get(k) for k in ['taken','dated','still_undated','failed','remaining']}); sys.exit(0 if d.get('taken',0)>0 else 1)" || break
+          done
+          { echo '## Re-date run'; echo; echo '```'; tail -c 60000 log.txt; echo '```'; } > body.md
+          n=$(gh issue list --repo "$GITHUB_REPOSITORY" --state open --search "Re-date in:title" --json number,title --jq '[.[] | select(.title == "Re-date")][0].number // empty')
+          if [ -n "$n" ]; then gh issue edit "$n" --repo "$GITHUB_REPOSITORY" --body-file body.md; else gh issue create --repo "$GITHUB_REPOSITORY" --title "Re-date" --body-file body.md; fi

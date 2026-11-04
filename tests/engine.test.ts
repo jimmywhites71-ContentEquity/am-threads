@@ -234,3 +234,15 @@ test('collect: date hints rank newer addresses first', () => {
   assert.equal(dateHint('https://x.com/blog/2026/02/18/hello/'), 202602)
   assert.equal(dateHint('https://x.com/insights/no-date-here/'), 0)
 })
+
+import { dateInText } from '../lib/extract'
+test('extract: publication dates found in pages without structured dates', () => {
+  assert.equal(dateInText('By Ben Gilbert · 15 October 2026 · 10 min read')?.slice(0, 10), '2026-10-15')
+  assert.equal(dateInText('Published Oct 3, 2026')?.slice(0, 10), '2026-10-03')
+  assert.equal(dateInText('17-Oct-2026 | Alex Boschen')?.slice(0, 10), '2026-10-17')
+  assert.equal(dateInText('Updated 04/11/2026')?.slice(0, 10), '2026-11-04')
+  const html = '<html><head><title>T</title></head><body><main><p>Home</p><h1>Retiring has always been emotional</h1><p>12 March 2026</p><p>' + 'word '.repeat(300) + '</p></main></body></html>'
+  assert.equal(extractFromHtml(html, 'https://www.7im.co.uk/news-views/retiring').published_at?.slice(0, 10), '2026-03-12')
+  const html2 = '<html><body><main><h1>Monthly Commentary</h1><p>' + 'word '.repeat(300) + '</p></main></body></html>'
+  assert.equal(extractFromHtml(html2, 'https://www.7im.co.uk/news-views/commentary-february-2023').published_at?.slice(0, 7), '2023-02')
+})
