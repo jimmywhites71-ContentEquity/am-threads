@@ -15,17 +15,20 @@ const PER_PAGE = 60
 function fmtDate(d: string | null) {
   return d ? new Date(d).toLocaleDateString('en-GB', { day: 'numeric', month: 'short', year: 'numeric' }) : 'undated'
 }
-function ease(score: number | null) {
-  if (score == null) return null
-  const label = score >= 60 ? 'plain' : score >= 40 ? 'fairly hard' : score >= 25 ? 'hard' : 'very hard'
-  return `${Math.round(score)} · ${label}`
+// Reading age (James, 5 Nov): the Flesch–Kincaid grade (a US school year) plus 5, the usual
+// conversion to a UK reading age, with the stage of education it corresponds to
+function readingAge(grade: number | null) {
+  if (grade == null) return null
+  const age = Math.max(7, Math.round(grade + 5))
+  const stage = age <= 11 ? 'primary school' : age <= 16 ? 'secondary school' : age <= 18 ? 'sixth form' : age <= 21 ? 'university' : 'postgraduate'
+  return { label: `Reading age ${age >= 23 ? '23+' : age}`, title: `Reading age ${age}: ${stage} level (Flesch–Kincaid grade ${grade.toFixed(1)} + 5)` }
 }
 
 export default async function Feed({ searchParams }: { searchParams: Search }) {
   const sb = db()
   const page = Math.max(1, Number(searchParams.page || 1))
   let q = sb.from('pieces')
-    .select('id, manager_id, title, url, published_at, summary, format, word_count, reading_minutes, flesch_reading_ease, image_url, asset_classes, sub_asset_classes, primary_theme, secondary_themes, subject_regions, status, visual, disclaimer_share', { count: 'exact' })
+    .select('id, manager_id, title, url, published_at, summary, format, word_count, reading_minutes, flesch_reading_ease, fk_grade, image_url, asset_classes, sub_asset_classes, primary_theme, secondary_themes, subject_regions, status, visual, disclaimer_share', { count: 'exact' })
     .order('published_at', { ascending: false, nullsFirst: false })
     .range((page - 1) * PER_PAGE, page * PER_PAGE - 1)
   if (searchParams.manager) q = q.eq('manager_id', searchParams.manager)
@@ -105,7 +108,7 @@ export default async function Feed({ searchParams }: { searchParams: Search }) {
                   {p.status === 'gated' ? <span className="badge muted">headline only</span> : <>
                     {p.format && <span className="badge">{p.format}</span>}
                     {p.reading_minutes != null && <span className="badge">{p.reading_minutes} min</span>}
-                    {ease(p.flesch_reading_ease) && <span className="badge" title="Flesch reading ease (higher is plainer)">{ease(p.flesch_reading_ease)}</span>}
+                    {(() => { const r = readingAge(p.fk_grade); return r && <span className="badge" title={r.title}>{r.label}</span> })()}
                     {v.charts ? <span className="badge">{v.charts} charts</span> : null}
                     {p.disclaimer_share ? <span className="badge" title="Share of the page that is disclaimer">{Math.round(p.disclaimer_share * 100)}% legal</span> : null}
                   </>}
