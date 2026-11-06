@@ -8,7 +8,7 @@ export async function loadSet(sb: ReturnType<typeof db>, id: string) {
   const { data: items } = await sb.from('cj_items').select('n, piece_id, anon_title, word_count, pieces(manager_id, title, url, published_at, flesch_reading_ease)').eq('set_id', id).order('n')
   const js: Judgement[] = []
   for (let from = 0; ; from += 1000) {
-    const { data } = await sb.from('cj_judgements').select('pair, left_n, right_n, ideas_winner, writing_winner, judge_kind, judge, ideas_reason, writing_reason').eq('set_id', id).range(from, from + 999)
+    const { data } = await sb.from('cj_judgements').select('pair, left_n, right_n, ideas_winner, writing_winner, presentation_winner, judge_kind, judge, ideas_reason, writing_reason, presentation_reason').eq('set_id', id).range(from, from + 999)
     js.push(...((data || []) as Judgement[]))
     if (!data || data.length < 1000) break
   }
