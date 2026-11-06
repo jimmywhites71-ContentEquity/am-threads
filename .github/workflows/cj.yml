@@ -13,6 +13,8 @@ on:
       days: { description: 'Look-back days for a new set', required: false, default: '60' }
       rounds: { description: 'Comparisons per piece in a new set', required: false, default: '8' }
       dry: { description: 'yes = only list candidate themes', required: false, default: 'no' }
+      pairs: { description: 'all, or human = only the pairs the team has judged (to test new instructions)', required: false, default: 'all' }
+      kinds: { description: 'Kinds of piece for a new set: essay, outlook, qa or all', required: false, default: 'essay' }
       models: { description: 'AI judges, space separated (sonnet haiku)', required: false, default: 'sonnet haiku' }
 
 permissions:
@@ -34,7 +36,7 @@ jobs:
             THEME=$(python3 -c "import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1]))" "${{ inputs.theme }}")
             PURP=$(python3 -c "import urllib.parse,sys; print(urllib.parse.quote(sys.argv[1]))" "${{ inputs.purposes }}")
             DRY=""; [ "${{ inputs.dry }}" = "yes" ] && DRY="&dry=1"
-            curl -sS -X POST "$SITE/api/cj/setup?n=${{ inputs.n }}&days=${{ inputs.days }}&rounds=${{ inputs.rounds }}&theme=$THEME&purposes=$PURP$DRY" -H "$AUTH" --max-time 120 -o setup.json
+            curl -sS -X POST "$SITE/api/cj/setup?n=${{ inputs.n }}&days=${{ inputs.days }}&rounds=${{ inputs.rounds }}&theme=$THEME&purposes=$PURP&kinds=${{ inputs.kinds }}$DRY" -H "$AUTH" --max-time 120 -o setup.json
             cat setup.json; echo
             [ "${{ inputs.dry }}" = "yes" ] && { echo "SET=" >> "$GITHUB_ENV"; exit 0; }
             SET=$(python3 -c "import json; print(json.load(open('setup.json')).get('id',''))")
@@ -43,7 +45,7 @@ jobs:
           echo "SET=$SET" >> "$GITHUB_ENV"
           for M in ${{ inputs.models }}; do
             for i in $(seq 1 40); do
-              curl -sS -X POST "$SITE/api/cj/judge?set=$SET&model=$M" -H "$AUTH" --max-time 300 -o j.json || true
+              curl -sS -X POST "$SITE/api/cj/judge?set=$SET&model=$M&pairs=${{ inputs.pairs }}" -H "$AUTH" --max-time 300 -o j.json || true
               python3 -c "import json; d=json.load(open('j.json')); print({k: d.get(k) for k in ['model','judged','failed','remaining','cost_usd','month_cj_usd','stopped','errors']})" || cat j.json
               python3 -c "import json,sys; d=json.load(open('j.json')); sys.exit(0 if (d.get('remaining',0)>0 and d.get('judged',0)>0) else 1)" || break
             done
