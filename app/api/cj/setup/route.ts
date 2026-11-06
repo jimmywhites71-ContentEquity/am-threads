@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db, unauthorised } from '@/lib/db'
-import { anonymise, makePairs } from '@/lib/cj'
+import { anonymise, makePairs, pieceKind } from '@/lib/cj'
 
 export const maxDuration = 120
 
@@ -21,7 +21,7 @@ export async function POST(req: NextRequest) {
   const since = new Date(Date.now() - days * 864e5).toISOString()
 
   const { data: rows, error } = await sb.from('pieces')
-    .select('id, manager_id, title, url, primary_theme, content_purpose, word_count, published_at')
+    .select('id, manager_id, title, url, format, primary_theme, content_purpose, word_count, published_at')
     .eq('status', 'read').in('format', ['article', 'outlook', 'research paper'])
     .gte('word_count', 700).lte('word_count', 6000).gte('published_at', since).not('primary_theme', 'is', null)
     .order('published_at', { ascending: false }).limit(20000)
@@ -32,7 +32,9 @@ export async function POST(req: NextRequest) {
   const year = new Date().getUTCFullYear()
   // ?purposes=thought leadership,house view keeps only those content purposes (the tagger's field)
   const purposes = (q.get('purposes') || '').split(',').map(x => x.trim().toLowerCase()).filter(Boolean)
-  const usable = (rows || []).filter(r => (!purposes.length || purposes.includes(String(r.content_purpose || '').toLowerCase())) && !/podcast|webinar|video|episode/i.test(`${r.url} ${r.title}`)
+  // ?kinds=essay (default) | outlook | qa | all: only pieces of that kind, so like is judged against like
+  const kinds = (q.get('kinds') || 'essay').split(',').map(x => x.trim())
+  const usable = (rows || []).filter(r => (kinds.includes('all') || kinds.includes(pieceKind(r))) && (!purposes.length || purposes.includes(String(r.content_purpose || '').toLowerCase())) && !/podcast|webinar|video|episode/i.test(`${r.url} ${r.title}`)
     && !(`${r.title} ${r.url}`.match(/\b20\d\d\b/g) || []).some(y => Number(y) < year - 1))
   // Comparable pieces per theme, capped per house
   const byTheme = new Map<string, typeof rows>()
@@ -76,7 +78,7 @@ export async function POST(req: NextRequest) {
   const pairs = makePairs(items.length, rounds, Date.now() % 100000, items.map(i => i.word_count || 0))
   const { error: sErr } = await sb.from('cj_sets').insert({
     id, name: `${theme}, ${new Date().toLocaleDateString('en-GB', { month: 'long', year: 'numeric' })} (pilot)`, theme,
-    params: { days, per_house: perHouse, words, rounds, purposes, pairs, created_from: candidates.slice(0, 10) },
+    params: { days, per_house: perHouse, words, rounds, purposes, kinds, pairs, created_from: candidates.slice(0, 10) },
   })
   if (sErr) return NextResponse.json({ error: sErr.message }, { status: 500 })
   const { error: iErr } = await sb.from('cj_items').insert(items.map((c, i) => ({

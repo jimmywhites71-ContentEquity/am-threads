@@ -15,6 +15,7 @@ export default function Judge({ setId }: { setId: string }) {
   const [writing, setWriting] = useState<number | null>(null)
   const [presentation, setPresentation] = useState<number | null>(null)
   const [note, setNote] = useState('')
+  const [marginal, setMarginal] = useState(false)
   const [busy, setBusy] = useState(false)
   const [err, setErr] = useState('')
   const shownAt = useRef(Date.now())
@@ -27,7 +28,7 @@ export default function Judge({ setId }: { setId: string }) {
       const r = await fetch(`/api/cj/human?judge=${encodeURIComponent(who)}${setId ? `&set=${encodeURIComponent(setId)}` : ''}`, { cache: 'no-store' })
       const j = await r.json()
       if (!r.ok) throw new Error(j.error || 'Could not load the next pair')
-      setNext(j); setIdeas(null); setWriting(null); setPresentation(null); setNote(''); shownAt.current = Date.now()
+      setNext(j); setIdeas(null); setWriting(null); setPresentation(null); setNote(''); setMarginal(false); shownAt.current = Date.now()
       window.scrollTo({ top: 0 })
     } catch (e: any) { setErr(e.message) } finally { setBusy(false) }
   }, [setId])
@@ -36,13 +37,14 @@ export default function Judge({ setId }: { setId: string }) {
 
   const shots = !!(next?.pair?.left.top && next?.pair?.right.top)
 
-  async function submit() {
-    if (!next?.pair || ideas == null || writing == null || (shots && presentation == null)) return
+  async function submit(unfair = false) {
+    if (!next?.pair) return
+    if (!unfair && (ideas == null || writing == null || (shots && presentation == null))) return
     setBusy(true); setErr('')
     try {
       const r = await fetch('/api/cj/human', {
         method: 'POST', headers: { 'content-type': 'application/json' },
-        body: JSON.stringify({ set: next.set.id, judge: name, pair: next.pair.k, left_n: next.pair.left.n, right_n: next.pair.right.n, ideas_winner: ideas, writing_winner: writing, presentation_winner: shots ? presentation : null, ideas_reason: note || null, seconds: (Date.now() - shownAt.current) / 1000 }),
+        body: JSON.stringify({ set: next.set.id, judge: name, pair: next.pair.k, left_n: next.pair.left.n, right_n: next.pair.right.n, unfair, ideas_winner: ideas, writing_winner: writing, presentation_winner: shots ? presentation : null, ideas_reason: unfair ? note : `${marginal ? '[marginal] ' : ''}${note}`.trim() || null, seconds: (Date.now() - shownAt.current) / 1000 }),
       })
       if (!r.ok) throw new Error((await r.json()).error || 'Not saved')
       await load(name)
@@ -90,7 +92,9 @@ export default function Judge({ setId }: { setId: string }) {
             <Choice label="Writing: which is better written?" value={writing} set={setWriting} left={p.left.n} right={p.right.n} />
             {shots && <Choice label="Presentation: which is better presented?" value={presentation} set={setPresentation} left={p.left.n} right={p.right.n} />}
             <input className="note" value={note} onChange={e => setNote(e.target.value)} placeholder="Why, in a few words (optional)" />
-            <button className="go" disabled={busy || ideas == null || writing == null || (shots && presentation == null)} onClick={submit}>{busy ? 'Saving…' : 'Save and next'}</button>
+            <label className="marg"><input type="checkbox" checked={marginal} onChange={e => setMarginal(e.target.checked)} /> Marginal call</label>
+            <button className="go" disabled={busy || ideas == null || writing == null || (shots && presentation == null)} onClick={() => submit(false)}>{busy ? 'Saving…' : 'Save and next'}</button>
+            <button className="skip" disabled={busy} onClick={() => submit(true)} title="The two pieces are not like for like (e.g. an outlook against an essay, a Q&A, a landing page). Add why in the box if you can.">Not a fair comparison</button>
           </div>
         </>
       )}
@@ -141,5 +145,7 @@ button { font: inherit; font-size: 14px; padding: 8px 14px; border-radius: 6px; 
 .choice { display:flex; gap:8px; align-items:center; font-size: 13px; }
 .choice div { display:flex; gap:4px; }
 .choice button.on { background: var(--ink); color: var(--bg); border-color: var(--ink); }
+.marg { font-size: 13px; display:flex; gap:6px; align-items:center; }
+.skip { font-size: 13px; color: var(--muted); }
 .note { min-width: 220px; flex: 0 1 280px; font-size: 13px; }
 `

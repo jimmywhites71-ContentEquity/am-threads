@@ -1,6 +1,6 @@
 import { NextRequest, NextResponse } from 'next/server'
 import { db, logRun, unauthorised } from '@/lib/db'
-import { CJ_MODELS, cjBudget, judgeImagePath, judgePair } from '@/lib/cj'
+import { CJ_MODELS, PROMPT_VERSION, cjBudget, judgeImagePath, judgePair } from '@/lib/cj'
 import { costOf, type Usage } from '@/lib/usage'
 
 export const maxDuration = 300
@@ -14,6 +14,10 @@ export async function POST(req: NextRequest) {
   const q = req.nextUrl.searchParams
   const setId = q.get('set') || ''
   const model = CJ_MODELS[q.get('model') || 'sonnet'] || CJ_MODELS.sonnet
+  // Judgements are recorded under the model and the instructions' version, so versions can be compared
+  const judgeName = `${model}@${PROMPT_VERSION}`
+  // ?pairs=human judges only the pairs the team has judged (to test a new version against the team)
+  const onlyHuman = q.get('pairs') === 'human'
   const sb = db()
 
   const month = new Date(Date.UTC(new Date().getUTCFullYear(), new Date().getUTCMonth(), 1)).toISOString()
@@ -26,11 +30,14 @@ export async function POST(req: NextRequest) {
   const pairs = ((set.params as any)?.pairs || []) as [number, number][]
   const { data: items } = await sb.from('cj_items').select('n, piece_id, anon_title, anon_text').eq('set_id', setId)
   const item = new Map((items || []).map(i => [i.n, i]))
-  const { data: done } = await sb.from('cj_judgements').select('pair, left_n').eq('set_id', setId).eq('judge', model).limit(20000)
+  const { data: done } = await sb.from('cj_judgements').select('pair, left_n').eq('set_id', setId).eq('judge', judgeName).limit(20000)
   const have = new Set((done || []).map(d => `${d.pair}:${d.left_n}`))
   // Every pair both ways round
   const todo: { pair: number; left: number; right: number }[] = []
+  const humanPairs = new Set<number>()
+  if (onlyHuman) for (const h of (await sb.from('cj_judgements').select('pair').eq('set_id', setId).eq('judge_kind', 'human').limit(10000)).data || []) humanPairs.add(h.pair)
   pairs.forEach(([a, b], k) => {
+    if (onlyHuman && !humanPairs.has(k)) return
     if (!have.has(`${k}:${a}`)) todo.push({ pair: k, left: a, right: b })
     if (!have.has(`${k}:${b}`)) todo.push({ pair: k, left: b, right: a })
   })
@@ -64,7 +71,7 @@ export async function POST(req: NextRequest) {
           ideas_winner: v.ideas === 'A' ? t.left : t.right, writing_winner: v.writing === 'A' ? t.left : t.right,
           presentation_winner: v.presentation ? (v.presentation === 'A' ? t.left : t.right) : null,
           ideas_reason: v.ideas_reason, writing_reason: v.writing_reason, presentation_reason: v.presentation_reason,
-          judge_kind: 'ai', judge: model, seconds: (Date.now() - t0) / 1000,
+          judge_kind: 'ai', judge: judgeName, seconds: (Date.now() - t0) / 1000,
         })
         if (error) throw new Error(error.message)
         stats.judged++

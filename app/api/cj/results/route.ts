@@ -24,7 +24,8 @@ export async function GET(req: NextRequest) {
     const ha = r.humanAgreement[g]?.[q]
     lines.push(`| ${g} | ${q} | ${f(r.scales[g][q].reliability)} | ${f(r.orderConsistency[g]?.[q], true)} | ${f(r.lengthCorrelation[g]?.[q])} | ${ha?.n ? `${f(ha.agree, true)} of ${ha.n}` : '–'} |`)
   }
-  lines.push('', `Sonnet vs Haiku rank correlation: ${qs.map(q => `${q} ${f(r.modelAgreement[q])}`).join(', ')}.`)
+  lines.push('', `Team agreeing with itself (same pair, two people): ${qs.map(q => r.teamAgreement[q]?.n ? `${q} ${f(r.teamAgreement[q].agree, true)} of ${r.teamAgreement[q].n}` : `${q} –`).join(', ')}. Pairs flagged not a fair comparison: ${r.unfairFlags}.`)
+  lines.push(`Sonnet vs Haiku rank correlation: ${qs.map(q => `${q} ${f(r.modelAgreement[q])}`).join(', ')}.`)
   lines.push(`Correlation between the questions: ${Object.entries(r.questionCorrelation).map(([g, v]) => `${g} (${Object.entries(v).map(([k, x]) => `${k} ${f(x)}`).join(', ')})`).join('; ')}.`, '')
   const main = r.scales.production ? 'production' : r.scales.sonnet ? 'sonnet' : Object.keys(r.scales)[0]
   if (main) for (const q of qs) {

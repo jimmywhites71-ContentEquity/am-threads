@@ -86,6 +86,20 @@ export function anonymise(managerId: string, text: string, words = 1200): string
   return `${out}\n\n[…]`
 }
 
+// ── Kind of piece ────────────────────────────────────────────────────────
+// Like is judged against like (James and Rob, 6 Nov: outlooks, Q&As, transcripts and landing pages
+// paired with essays were "not a fair test"). Until taxonomy v1.1 tags the kind of piece, it is
+// read from the format, title and address: essays and argued articles; outlooks and periodic
+// reviews (quarterly letters, monthly round-ups, house views from CIOs); Q&As, interviews and
+// transcripts.
+export type PieceKind = 'essay' | 'outlook' | 'qa'
+export function pieceKind(p: { title?: string | null; url?: string | null; format?: string | null }): PieceKind {
+  const t = `${p.title || ''}`.toLowerCase(), u = `${p.url || ''}`.toLowerCase()
+  if (/\bq ?& ?a\b|\binterview\b|in conversation|\bconversation with\b|\btranscript\b|\bpodcast\b|\bepisode\b|\bwebinar\b|\bpanel\b/.test(t) || /\/(podcasts?|videos?|webinars?)\//.test(u)) return 'qa'
+  if (p.format === 'outlook' || /\boutlook\b|\bperspectives?\b|\bviews from\b|investment views|\b(investor |quarterly |monthly |weekly )?(letter|update|review|commentary|round-?up|insights)\b.*\b(q[1-4]|20\d\d|january|february|march|april|may|june|july|august|september|october|november|december)\b|\bq[1-4]\b|\bmid-?year\b|\byear ahead\b|\bforward:|\bweekly\b|\bmonthly\b|\bquarterly\b|\b\d in \d\b/.test(t)) return 'outlook'
+  return 'essay'
+}
+
 // ── Pairs ────────────────────────────────────────────────────────────────
 
 /**
@@ -146,13 +160,32 @@ function makeMatchedPairs(n: number, rounds: number, seed: number, lengths: numb
 
 // ── The AI judge ─────────────────────────────────────────────────────────
 
-const SYSTEM = `You are a senior editor at a content consultancy that advises asset managers on their published thinking. You compare two pieces of asset-manager content on the same subject and make separate judgements, as an experienced editor would: quickly, holistically, and with taste.
+// Judging instructions. v2 (6 Nov 2026) is calibrated on the team's first 153 judgements and 114
+// notes (James 53, Rob 100) on the AI set: where Claude and the team disagreed, the team valued a
+// clearly held, forward-looking view that is useful to its reader, a human voice and a strong
+// headline; Claude had leaned towards density of data and specific figures, and had marked down
+// practical guides as "generic checklists". Judgements record the version in the judge name
+// (e.g. claude-sonnet-5-5@v2) so each version's agreement with the team can be compared.
+export const PROMPT_VERSION = 'v2'
+const SYSTEM = `You are a senior editor at Content Equity, a consultancy that advises asset managers on their published thinking. You compare two pieces of asset-manager content on the same subject and make separate judgements, as the firm's editors would: quickly, holistically, and with taste. Judge as a busy professional reader would experience each piece.
 
 1. IDEAS. ${QUESTIONS.ideas.ask}
 2. WRITING. ${QUESTIONS.writing.ask}
 3. PRESENTATION (only when screenshots of both pages are given). ${QUESTIONS.presentation.ask}
 
-The pieces are shown in full and are of broadly similar length. Depth of analysis counts in their favour; length that only adds padding, repetition or a survey of other people's views does not. House names are removed from the text and site headers and logos are hidden in the screenshots; do not guess or use the house. Confident tone, jargon and numbers are not insight in themselves: prefer a specific, well-supported, distinctive argument over a broad survey of consensus views. Prefer plain, precise, vivid writing over corporate boilerplate. For presentation, judge the page as a reader meets it: the top of the page first, then the whole page; charts and visuals count when they carry the argument, not as decoration. The judgements are separate: a piece can win one and lose another.
+What the editors reward for IDEAS:
+- A clear, confidently held view that a reader could act on or argue with. A piece that takes a position beats a balanced survey of the consensus, even a well-researched one.
+- Insight that is useful to the piece's intended reader: practical implications, forward-looking judgement, guidance a client could use. A genuinely useful practical guide can beat a more ambitious macro essay.
+- Evidence and data count when they support the view. Do not reward density of figures, statistics or specificity for its own sake.
+- Originality of angle: a fresh question, a counter-intuitive argument, a framing that changes how the reader sees the subject.
+
+What the editors reward for WRITING:
+- A human voice: the manager's own opinion coming through, a personal or conversational touch, a sense of a person behind it. Mark down prose that is bland, impersonal or flattened by compliance and corporate boilerplate.
+- Clarity and punch: tight sentences, opinion expressed clearly and confidently, a strong opening and close.
+- The headline counts: an original, sharp headline that makes you want to read on is part of good writing.
+- Analogies and examples anyone can follow are a strength; jargon and hedging ("may", "could", "navigating") are a weakness.
+
+The pieces are shown in full and are of broadly similar length. Depth counts in their favour; padding, repetition and summaries of other people's views do not. House names are removed from the text and site headers and logos are hidden in the screenshots; do not guess or use the house. For presentation, judge the page as a reader meets it: the top of the page first, then the whole page; charts and visuals count when they carry the argument, not as decoration. The judgements are separate: a piece can win one and lose another. Many pairs are close; still choose, but say so in the reason when it is marginal.
 
 Reply with JSON only, nothing else (leave out the presentation keys when there are no screenshots):
 {"ideas":"A" or "B","ideas_reason":"under 25 words","writing":"A" or "B","writing_reason":"under 25 words","presentation":"A" or "B","presentation_reason":"under 25 words"}`
@@ -281,6 +314,10 @@ export interface Report {
   ideasWritingCorrelation: Record<string, number | null>
   /** Rank correlation between the questions' scales, per judge group: 'ideas-writing', 'ideas-presentation', 'writing-presentation' */
   questionCorrelation: Record<string, Record<string, number | null>>
+  /** How often two people agree on the same pair: the realistic ceiling for Claude's agreement */
+  teamAgreement: Record<Question, { n: number; agree: number | null }>
+  /** Pairs people flagged "not a fair comparison" */
+  unfairFlags: number
   /** Questions with any judgements in this set */
   questions: Question[]
 }
@@ -289,11 +326,19 @@ export interface Report {
 export function report(n: number, items: { n: number; word_count: number | null }[], js: Judgement[]): Report {
   const judges: Report['judges'] = {}
   for (const j of js) (judges[j.judge] ||= { kind: j.judge_kind, judgements: 0 }).judgements++
-  const groupOf = (j: Judgement) => j.judge_kind === 'human' ? 'human' : Object.entries(CJ_MODELS).find(([, m]) => j.judge.startsWith(m))?.[0] || j.judge
+  // AI judges are grouped by model and instructions' version: 'sonnet' (v1), 'sonnet@v2', 'haiku'…
+  const groupOf = (j: Judgement) => {
+    if (j.judge_kind === 'human') return 'human'
+    const base = Object.entries(CJ_MODELS).find(([, m]) => j.judge.startsWith(m))?.[0] || j.judge
+    const ver = j.judge.split('@')[1]
+    return ver ? `${base}@${ver}` : base
+  }
   const groups: Record<string, Judgement[]> = {}
   for (const j of js) (groups[groupOf(j)] ||= []).push(j)
   // The production scale: Sonnet's judgements and the people's together (the 90/10 design)
-  groups.production = [...(groups.sonnet || []), ...(groups.human || [])]
+  // The production scale: the latest Sonnet version's judgements and the people's together (the 90/10 design)
+  const latestSonnet = Object.keys(groups).filter(g => g.startsWith('sonnet')).sort().pop()
+  groups.production = [...(latestSonnet ? groups[latestSonnet] : []), ...(groups.human || [])]
   const qs: Question[] = QUESTION_LIST.filter(q => js.some(j => winnerOf(j, q) != null))
   if (!qs.length) qs.push('ideas', 'writing')
   const scales: Report['scales'] = {}
@@ -303,7 +348,8 @@ export function report(n: number, items: { n: number; word_count: number | null 
   }
 
   const orderConsistency: Report['orderConsistency'] = {}
-  for (const g of ['sonnet', 'haiku']) {
+  const aiGroups = Object.keys(groups).filter(g => g !== 'human' && g !== 'production')
+  for (const g of aiGroups) {
     const list = groups[g] || []
     orderConsistency[g] = { ideas: null, writing: null, presentation: null }
     for (const q of qs) {
@@ -315,7 +361,7 @@ export function report(n: number, items: { n: number; word_count: number | null 
   }
 
   const humanAgreement: Report['humanAgreement'] = {}
-  for (const g of ['sonnet', 'haiku']) {
+  for (const g of aiGroups) {
     if (!scales[g]) continue
     humanAgreement[g] = { ideas: { n: 0, agree: null }, writing: { n: 0, agree: null }, presentation: { n: 0, agree: null } }
     for (const q of qs) {
@@ -345,7 +391,21 @@ export function report(n: number, items: { n: number; word_count: number | null 
     questionCorrelation[g] = {}
     for (let a = 0; a < qs.length; a++) for (let b = a + 1; b < qs.length; b++) questionCorrelation[g][`${qs[a]}-${qs[b]}`] = spearman(s[qs[a]].theta, s[qs[b]].theta)
   }
-  return { judges, scales, orderConsistency, humanAgreement, modelAgreement, lengthCorrelation, ideasWritingCorrelation, questionCorrelation, questions: qs }
+  const teamAgreement = {} as Report['teamAgreement']
+  const byPair = new Map<number, Judgement[]>()
+  for (const j of groups.human || []) byPair.set(j.pair, [...(byPair.get(j.pair) || []), j])
+  for (const q of QUESTION_LIST) {
+    let n2 = 0, ok = 0
+    for (const list of byPair.values()) for (let a = 0; a < list.length; a++) for (let b = a + 1; b < list.length; b++) {
+      if (list[a].judge === list[b].judge) continue
+      const x = winnerOf(list[a], q), y = winnerOf(list[b], q)
+      if (x == null || y == null) continue
+      n2++; if (x === y) ok++
+    }
+    teamAgreement[q] = { n: n2, agree: n2 ? Math.round((ok / n2) * 100) / 100 : null }
+  }
+  const unfairFlags = js.filter(j => j.judge_kind === 'human' && /^\[unfair\]/.test(j.ideas_reason || '')).length
+  return { judges, scales, orderConsistency, humanAgreement, modelAgreement, lengthCorrelation, ideasWritingCorrelation, questionCorrelation, teamAgreement, unfairFlags, questions: qs }
 }
 
 export const managerName = (id: string) => MANAGER_BY_ID.get(id)?.name || id

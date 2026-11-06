@@ -17,7 +17,9 @@ export default async function Results({ searchParams }: { searchParams: { set?: 
   const data = id ? await loadSet(sb, id) : null
   if (!data) return <div className="wrap"><style>{CSS}</style><h1>Ideas &amp; voice</h1><p>No judging set yet.</p></div>
   const { set, items, report: r, judgements } = data
-  const groups = Object.keys(GROUPS).filter(g => r.scales[g])
+  const groups = ['production', ...Object.keys(r.scales).filter(g => g !== 'production')].filter(g => r.scales[g])
+  const label = (g: string) => GROUPS[g] || (g.includes('@') ? `${GROUPS[g.split('@')[0]] || g.split('@')[0]} ${g.split('@')[1]}` : g)
+  const sg = Object.keys(r.scales).filter(g => g.startsWith('sonnet')).sort().pop() || 'sonnet'
   const scale = groups.includes(searchParams.scale || '') ? searchParams.scale! : groups[0]
   const qs = r.questions
   const sort: Question = qs.includes(searchParams.sort as Question) ? searchParams.sort as Question : 'ideas'
@@ -33,7 +35,7 @@ export default async function Results({ searchParams }: { searchParams: { set?: 
     const js = judgements.filter(j => winnerOf(j, q) === n && (scale === 'human' ? j.judge_kind === 'human' : scale === 'haiku' ? /haiku/.test(j.judge) : scale === 'sonnet' ? /sonnet/.test(j.judge) : j.judge_kind === 'human' || /sonnet/.test(j.judge)))
     return js.map(j => reasonOf(j, q)).filter(Boolean)[0] as string | undefined
   }
-  const agree = r.humanAgreement.sonnet
+  const agree = r.humanAgreement[sg]
 
   // Ideas (x) against writing (y): one dot per piece
   const W = 560, H = 360, P = 40
@@ -51,19 +53,19 @@ export default async function Results({ searchParams }: { searchParams: { set?: 
 
       <section className="tiles">
         <Tile label={`Reliability (${qnames})`} value={join(q => two(S[q]?.reliability))} note="0.7 or more is a dependable scale" />
-        <Tile label="Sonnet agrees with the team" value={agree ? join(q => pct(agree[q]?.agree)) : '–'} note={agree?.ideas.n ? `on ${agree.ideas.n} team judgements` : 'needs team judgements'} />
-        <Tile label="Same winner both ways round" value={join(q => pct(r.orderConsistency.sonnet?.[q]))} note="Sonnet; position should not matter" />
+        <Tile label={`${label(sg)} agrees with the team`} value={agree ? join(q => pct(agree[q]?.agree)) : '–'} note={agree?.ideas.n ? `on ${agree.ideas.n} team judgements` : 'needs team judgements'} />
+        <Tile label="Same winner both ways round" value={join(q => pct(r.orderConsistency[sg]?.[q]))} note={`${label(sg)}; position should not matter`} />
         <Tile label="Tracks length?" value={join(q => two(r.lengthCorrelation[scale]?.[q]))} note="rank correlation with word count; compare with the team's" />
       </section>
 
       <nav className="tabs">
-        Scale: {groups.map(g => <a key={g} className={g === scale ? 'on' : ''} href={link({ scale: g })}>{GROUPS[g]}</a>)}
+        Scale: {groups.map(g => <a key={g} className={g === scale ? 'on' : ''} href={link({ scale: g })}>{label(g)}</a>)}
         <span className="sep" />
         Rank by: {qs.map(q => <a key={q} className={q === sort ? 'on' : ''} href={link({ sort: q })}>{QUESTIONS[q].label}</a>)}
       </nav>
 
       <figure className="chart">
-        <figcaption>Ideas against writing, one dot per piece ({GROUPS[scale]} scale, logits). Rank correlation {two(r.ideasWritingCorrelation[scale])}.</figcaption>
+        <figcaption>Ideas against writing, one dot per piece ({label(scale)} scale, logits). Rank correlation {two(r.ideasWritingCorrelation[scale])}.</figcaption>
         <svg viewBox={`0 0 ${W} ${H}`} role="img" aria-label="Scatter of ideas score against writing score">
           <line x1={P} x2={W - 12} y1={Y(0)} y2={Y(0)} className="axis" /><line x1={X(0)} x2={X(0)} y1={12} y2={H - P} className="axis" />
           <text x={W - 12} y={H - 12} textAnchor="end" className="lab">more original ideas →</text>
