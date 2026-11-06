@@ -1,0 +1,25 @@
+name: Judging export
+# Saves a judging set's pieces and judgements as JSON to the judge-previews branch, for analysis.
+on:
+  workflow_dispatch:
+    inputs:
+      set: { description: 'Set id', required: true }
+permissions:
+  contents: write
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    env:
+      SITE_RAW: ${{ vars.SITE_URL }}
+      AUTH: 'Authorization: Bearer ${{ secrets.PIPELINE_API_KEY }}'
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - run: |
+          SITE="${SITE_RAW%/}"
+          curl -sS -G "$SITE/api/cj/export" --data-urlencode "set=${{ inputs.set }}" -H "$AUTH" --max-time 60 -o export.json
+          head -c 300 export.json; echo
+          gh api repos/$GITHUB_REPOSITORY/git/refs/heads/judge-previews >/dev/null 2>&1 || gh api repos/$GITHUB_REPOSITORY/git/refs -f ref=refs/heads/judge-previews -f sha=$GITHUB_SHA
+          SHA=$(gh api "repos/$GITHUB_REPOSITORY/contents/exports/cj.json?ref=judge-previews" --jq .sha 2>/dev/null || true)
+          base64 -w0 export.json > b64.txt
+          if [ -n "$SHA" ]; then gh api -X PUT "repos/$GITHUB_REPOSITORY/contents/exports/cj.json" -f message=export -f branch=judge-previews -f sha="$SHA" -F content=@b64.txt >/dev/null
+          else gh api -X PUT "repos/$GITHUB_REPOSITORY/contents/exports/cj.json" -f message=export -f branch=judge-previews -F content=@b64.txt >/dev/null; fi
