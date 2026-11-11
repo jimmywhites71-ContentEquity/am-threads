@@ -18,7 +18,8 @@ export async function GET(req: NextRequest) {
   const { data: hs } = await sb.from('cj_judgements').select('pair, judge').eq('set_id', setId).eq('judge_kind', 'human').limit(10000)
   const count = new Map<number, number>(), mine = new Set<number>()
   for (const h of hs || []) { count.set(h.pair, (count.get(h.pair) || 0) + 1); if (h.judge.toLowerCase() === judge.toLowerCase()) mine.add(h.pair) }
-  const open = pairs.map((_, k) => k).filter(k => !mine.has(k))
+  const dropped = new Set<number>(((set.params as any)?.dropped) || [])
+  const open = pairs.map((_, k) => k).filter(k => !mine.has(k) && !dropped.has(pairs[k][0]) && !dropped.has(pairs[k][1]))
   if (!open.length) return NextResponse.json({ set: { id: set.id, name: set.name }, done: mine.size, total: pairs.length, pair: null })
   // Shared pairs: each person's first 20 judgements are pairs another person has already judged
   // where there are any, so the team's agreement with itself can be measured (the ceiling for

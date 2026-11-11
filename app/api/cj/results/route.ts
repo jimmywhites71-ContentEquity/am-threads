@@ -30,7 +30,7 @@ export async function GET(req: NextRequest) {
   const main = r.scales.production ? 'production' : r.scales.sonnet ? 'sonnet' : Object.keys(r.scales)[0]
   if (main) for (const q of qs) {
     const s = r.scales[main][q]
-    const order = items.map((_: any, i: number) => i).sort((a: number, b: number) => s.theta[b] - s.theta[a])
+    const order = items.map((_: any, i: number) => i).filter((i: number) => !(items[i] as any).dropped).sort((a: number, b: number) => s.theta[b] - s.theta[a])
     const row = (i: number, k: number) => `| ${k + 1} | ${s.theta[i].toFixed(2)} ± ${s.se[i].toFixed(2)} | ${managerName(items[i].piece?.manager_id)} | [${(items[i].piece?.title || '').slice(0, 90)}](${items[i].piece?.url}) | ${items[i].word_count} |`
     lines.push(`## ${q[0].toUpperCase() + q.slice(1)}: top 10 and bottom 5 (${main} scale)`, '', '| Rank | Score | House | Piece | Words |', '|---|---|---|---|---|')
     order.slice(0, 10).forEach((i: number, k: number) => lines.push(row(i, k)))

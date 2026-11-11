@@ -27,7 +27,7 @@ export default async function Results({ searchParams }: { searchParams: { set?: 
   const qnames = qs.map(q => QUESTIONS[q].label.toLowerCase()).join(' · ')
   if (!scale) return <div className="wrap"><style>{CSS}</style><h1>{set.name}</h1><p>No judgements yet.</p></div>
   const S = r.scales[scale]
-  const order = items.map((_: any, i: number) => i).sort((a: number, b: number) => S[sort].theta[b] - S[sort].theta[a])
+  const order = items.map((_: any, i: number) => i).filter((i: number) => !(items[i] as any).dropped).sort((a: number, b: number) => S[sort].theta[b] - S[sort].theta[a])
   const human = judgements.filter(j => j.judge_kind === 'human')
   const ai = judgements.filter(j => j.judge_kind === 'ai')
   // One reason each piece won on, from the scale's judges
@@ -70,7 +70,7 @@ export default async function Results({ searchParams }: { searchParams: { set?: 
           <line x1={P} x2={W - 12} y1={Y(0)} y2={Y(0)} className="axis" /><line x1={X(0)} x2={X(0)} y1={12} y2={H - P} className="axis" />
           <text x={W - 12} y={H - 12} textAnchor="end" className="lab">more original ideas →</text>
           <text x={14} y={14} className="lab" transform={`rotate(90 14 14)`}>better writing →</text>
-          {items.map((it: any, i: number) => (
+          {items.map((it: any, i: number) => it.dropped ? null : (
             <g key={i} className="dot"><circle cx={X(xs[i])} cy={Y(ys[i])} r={10} className="hit" /><circle cx={X(xs[i])} cy={Y(ys[i])} r={4.5} />
               <title>{`${managerName(it.piece?.manager_id)}: ${it.piece?.title}\nIdeas ${xs[i].toFixed(2)} · Writing ${ys[i].toFixed(2)}`}</title></g>
           ))}

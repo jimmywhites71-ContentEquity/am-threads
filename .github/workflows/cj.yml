@@ -44,6 +44,7 @@ jobs:
           fi
           echo "SET=$SET" >> "$GITHUB_ENV"
           for M in ${{ inputs.models }}; do
+            [ "$M" = "none" ] && continue
             for i in $(seq 1 40); do
               curl -sS -X POST "$SITE/api/cj/judge?set=$SET&model=$M&pairs=${{ inputs.pairs }}" -H "$AUTH" --max-time 300 -o j.json || true
               python3 -c "import json; d=json.load(open('j.json')); print({k: d.get(k) for k in ['model','judged','failed','remaining','cost_usd','month_cj_usd','stopped','errors']})" || cat j.json

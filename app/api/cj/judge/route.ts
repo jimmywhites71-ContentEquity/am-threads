@@ -13,7 +13,8 @@ export async function POST(req: NextRequest) {
   const started = Date.now(), deadline = started + 240_000
   const q = req.nextUrl.searchParams
   const setId = q.get('set') || ''
-  const model = CJ_MODELS[q.get('model') || 'sonnet'] || CJ_MODELS.sonnet
+  const model = CJ_MODELS[q.get('model') || 'sonnet']
+  if (!model) return NextResponse.json({ judged: 0, remaining: 0, stopped: `unknown model "${q.get('model')}"; use sonnet or haiku` }, { status: 400 })
   // Judgements are recorded under the model and the instructions' version, so versions can be compared
   const judgeName = `${model}@${PROMPT_VERSION}`
   // ?pairs=human judges only the pairs the team has judged (to test a new version against the team)
@@ -36,8 +37,10 @@ export async function POST(req: NextRequest) {
   const todo: { pair: number; left: number; right: number }[] = []
   const humanPairs = new Set<number>()
   if (onlyHuman) for (const h of (await sb.from('cj_judgements').select('pair').eq('set_id', setId).eq('judge_kind', 'human').limit(10000)).data || []) humanPairs.add(h.pair)
+  const dropped = new Set<number>(((set.params as any)?.dropped) || [])
   pairs.forEach(([a, b], k) => {
     if (onlyHuman && !humanPairs.has(k)) return
+    if (dropped.has(a) || dropped.has(b)) return
     if (!have.has(`${k}:${a}`)) todo.push({ pair: k, left: a, right: b })
     if (!have.has(`${k}:${b}`)) todo.push({ pair: k, left: b, right: a })
   })
@@ -61,6 +64,9 @@ export async function POST(req: NextRequest) {
   await Promise.all(Array.from({ length: 6 }, async () => {
     for (let t = queue.shift(); t; t = queue.shift()) {
       if (Date.now() > deadline) break
+      // The allowance is checked before every judgement, not only at the start of the call
+      // (a single call overshot November's $8 by $3.34 on 11 Nov)
+      if (spent + costOf(usage) >= cjBudget()) { (stats as any).stopped = `comparative-judgement budget reached ($${(spent + costOf(usage)).toFixed(2)} of $${cjBudget()})`; break }
       const L = item.get(t.left)!, R = item.get(t.right)!
       const t0 = Date.now()
       try {

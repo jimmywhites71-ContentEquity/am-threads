@@ -12,7 +12,11 @@ export async function loadSet(sb: ReturnType<typeof db>, id: string) {
     js.push(...((data || []) as Judgement[]))
     if (!data || data.length < 1000) break
   }
-  const list = (items || []).map((i: any) => ({ ...i, piece: Array.isArray(i.pieces) ? i.pieces[0] : i.pieces }))
+  const dropped = new Set<number>(((set.params as any)?.dropped) || [])
+  const list = (items || []).map((i: any) => ({ ...i, dropped: dropped.has(i.n), piece: Array.isArray(i.pieces) ? i.pieces[0] : i.pieces }))
+  // Judgements involving a piece removed from the set are left out of every scale
+  const kept = js.filter(j => !dropped.has(j.left_n) && !dropped.has(j.right_n))
+  js.length = 0; js.push(...kept)
   return { set, items: list, judgements: js, report: report(list.length, list, js), pairs: ((set.params as any)?.pairs || []) as [number, number][] }
 }
 

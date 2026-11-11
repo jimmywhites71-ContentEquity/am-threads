@@ -14,9 +14,17 @@ export async function POST(req: NextRequest) {
   const drop = new Set((q.get('drop') || '').split(',').map(Number).filter(n => Number.isInteger(n)))
   const sb = db()
   const { count } = await sb.from('cj_judgements').select('id', { count: 'exact', head: true }).eq('set_id', setId)
-  if (count) return NextResponse.json({ error: `set has ${count} judgements; make a new set instead` }, { status: 409 })
+  const { count: humans } = await sb.from('cj_judgements').select('id', { count: 'exact', head: true }).eq('set_id', setId).eq('judge_kind', 'human')
+  if (humans) return NextResponse.json({ error: `set has ${humans} team judgements; make a new set instead` }, { status: 409 })
   const { data: set } = await sb.from('cj_sets').select('params').eq('id', setId).maybeSingle()
   if (!set) return NextResponse.json({ error: 'no set' }, { status: 404 })
+  // Only Claude has judged: keep the pieces and pairs, but mark the dropped pieces so no one is
+  // shown them again and the results leave them (and every judgement involving them) out
+  if (count) {
+    const dropped = Array.from(new Set([...(((set.params as any)?.dropped) || []), ...Array.from(drop)]))
+    await sb.from('cj_sets').update({ params: { ...(set.params as object), dropped } }).eq('id', setId)
+    return NextResponse.json({ set: setId, dropped, note: `kept ${count} AI judgements; dropped pieces hidden` })
+  }
   const { data: items } = await sb.from('cj_items').select('*').eq('set_id', setId).order('n')
   let keep = (items || []).filter(i => !drop.has(i.n))
   if (keep.length % 2) keep = keep.slice(0, -1)
