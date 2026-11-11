@@ -5,13 +5,17 @@ on:
     inputs:
       set: { description: 'Set id', required: true }
       drop: { description: 'Positions to remove, comma separated (from the export)', required: true }
+permissions:
+  issues: write
 jobs:
   prune:
     runs-on: ubuntu-latest
     env:
+      GH_TOKEN: ${{ github.token }}
       SITE_RAW: ${{ vars.SITE_URL }}
       AUTH: 'Authorization: Bearer ${{ secrets.PIPELINE_API_KEY }}'
     steps:
       - run: |
           SITE="${SITE_RAW%/}"
-          curl -sS -f -X POST "$SITE/api/cj/prune?set=${{ inputs.set }}&drop=${{ inputs.drop }}" -H "$AUTH" --max-time 60
+          curl -sS -X POST "$SITE/api/cj/prune?set=${{ inputs.set }}&drop=${{ inputs.drop }}" -H "$AUTH" --max-time 60 -o out.json; cat out.json; echo; gh issue list --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1 || true
+          N=$(gh api "repos/$GITHUB_REPOSITORY/issues?state=open&per_page=30" --jq '[.[]|select(.title=="Comparative judgement")][0].number'); gh api -X POST repos/$GITHUB_REPOSITORY/issues/$N/comments -f body="Prune: $(cat out.json)" >/dev/null
