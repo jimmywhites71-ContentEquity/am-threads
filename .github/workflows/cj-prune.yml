@@ -1,0 +1,17 @@
+name: Judging set prune
+# Removes unsuitable pieces from a judging set before anyone judges it, then re-pairs the rest.
+on:
+  workflow_dispatch:
+    inputs:
+      set: { description: 'Set id', required: true }
+      drop: { description: 'Positions to remove, comma separated (from the export)', required: true }
+jobs:
+  prune:
+    runs-on: ubuntu-latest
+    env:
+      SITE_RAW: ${{ vars.SITE_URL }}
+      AUTH: 'Authorization: Bearer ${{ secrets.PIPELINE_API_KEY }}'
+    steps:
+      - run: |
+          SITE="${SITE_RAW%/}"
+          curl -sS -f -X POST "$SITE/api/cj/prune?set=${{ inputs.set }}&drop=${{ inputs.drop }}" -H "$AUTH" --max-time 60
