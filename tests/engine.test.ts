@@ -12,11 +12,11 @@ import { ALL_THEMES, ASSET_CLASSES, REGION_FACETS, SUB_ASSET_KEYS, THEME_PARENTS
 test('taxonomy has the agreed shape', () => {
   assert.equal(THEME_PARENTS.length, 12)
   assert.equal(ALL_THEMES.length, new Set(ALL_THEMES).size, 'theme names are unique')
-  assert.equal(ALL_THEMES.length, 69)
+  assert.equal(ALL_THEMES.length, 71)  // 1.1.0: + Hedge Funds & Alternatives, Tax & Wealth Planning
   assert.equal(REGION_FACETS.length, 12)
   assert.equal(VEHICLE_FACETS.length, 7)
   assert.equal(ASSET_CLASSES.length, 6)
-  assert.equal(SUB_ASSET_KEYS.length, 38)
+  assert.equal(SUB_ASSET_KEYS.length, 45)  // 1.1.0
   for (const t of ['China', 'Emerging Markets', 'Value', 'Growth', 'Quality', 'Quant & Factors', 'ETFs', 'Thematic Funds', 'Water', 'Space', 'Cybersecurity', 'Latin America', 'Middle East', 'Korea & Taiwan']) assert.ok(ALL_THEMES.includes(t), t)
 })
 
@@ -245,4 +245,11 @@ test('extract: publication dates found in pages without structured dates', () =>
   assert.equal(extractFromHtml(html, 'https://www.7im.co.uk/news-views/retiring').published_at?.slice(0, 10), '2026-03-12')
   const html2 = '<html><body><main><h1>Monthly Commentary</h1><p>' + 'word '.repeat(300) + '</p></main></body></html>'
   assert.equal(extractFromHtml(html2, 'https://www.7im.co.uk/news-views/commentary-february-2023').published_at?.slice(0, 7), '2023-02')
+})
+
+test('taxonomy 1.1.0: kind, shelf life, argument and series are kept within their scales', () => {
+  const t = normaliseTags({ asset_classes: ['Equities'], sub_asset_classes: ['Equities › Listed real estate (REITs)'], kind: 'periodic', shelf_life: 3, argument: 7, series: true })
+  assert.equal(t.kind, 'periodic'); assert.equal(t.shelf_life, 3); assert.equal(t.argument, null); assert.equal(t.series, true)
+  assert.deepEqual(t.sub_asset_classes, ['Equities › Listed real estate (REITs)'])
+  assert.equal(normaliseTags({ kind: 'blog' }).kind, null)
 })

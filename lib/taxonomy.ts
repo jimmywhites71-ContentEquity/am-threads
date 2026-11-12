@@ -5,9 +5,15 @@
 // Any change here is a new TAXONOMY_VERSION, and history is re-tagged so trends stay comparable.
 // AlphaThreads must tag against the same version for the white-space comparison to be valid.
 
-export const TAXONOMY_VERSION = '1.0.1'
+export const TAXONOMY_VERSION = '1.1.0'
 // 1.0.0  14 Oct 2026  first list (12 parent themes, 67 child themes)
 // 1.0.1  14 Oct 2026  Quality limited to equities (James): quality in credit is not this theme
+// 1.1.0  12 Nov 2026  agreed by James and Rob: kind of piece, shelf life, argument and series added
+//                     (thought leadership becomes a region: shelf life 2+ and argument 2+); Rob's
+//                     sub-classes (agency and covered bonds, leveraged loans, money markets, buyouts,
+//                     asset-based finance); listed real estate and infrastructure move to Equities;
+//                     Real Assets becomes Commodities & Real Assets; Convertibles, Tax & Wealth
+//                     Planning and Hedge Funds & Alternatives added from the tagger's candidates
 
 // ── Asset classes and sub-asset classes ──────────────────────────────────
 
@@ -17,7 +23,7 @@ export interface AssetClass { name: string; definition: string; subs: SubAssetCl
 export const ASSET_CLASSES: AssetClass[] = [
   {
     name: 'Equities',
-    definition: 'Listed shares: stock markets and indices, sectors and styles, equity valuations, earnings as they bear on share prices, buybacks, IPOs, equity factors.',
+    definition: 'Listed shares: stock markets and indices, sectors and styles, equity valuations, earnings as they bear on share prices, buybacks, IPOs, equity factors, and listed real estate (REITs) and listed infrastructure, which are public equity segments.',
     subs: [
       { name: 'US', definition: 'US-listed equities and US equity markets.' },
       { name: 'Europe', definition: 'Continental European and pan-European equities.' },
@@ -28,6 +34,8 @@ export const ASSET_CLASSES: AssetClass[] = [
       { name: 'Small & mid cap', definition: 'Small and mid-cap equities as a segment.' },
       { name: 'Style', definition: 'Growth, value, quality or income equity styles.' },
       { name: 'Sector & thematic', definition: 'A sector (technology, healthcare, energy, banks…) or a thematic equity opportunity.' },
+      { name: 'Listed real estate (REITs)', definition: 'REITs and listed property companies.' },
+      { name: 'Listed infrastructure', definition: 'Listed infrastructure and utilities as an equity segment.' },
     ],
   },
   {
@@ -35,36 +43,41 @@ export const ASSET_CLASSES: AssetClass[] = [
     definition: 'Government bonds and yields, rates and curves as markets, corporate bonds, spreads, high yield and investment grade, securitised debt, defaults and ratings of debt, green bonds. Private credit and direct lending are Private Markets.',
     subs: [
       { name: 'Government & rates', definition: 'Sovereign bonds, yields, curves, duration, rates markets.' },
+      { name: 'Agency bonds', definition: 'Government agency and supranational bonds (agencies, SSAs).' },
+      { name: 'Covered bonds', definition: 'Covered bonds and Pfandbriefe.' },
       { name: 'Inflation-linked', definition: 'Inflation-linked bonds (TIPS, linkers) and breakevens.' },
       { name: 'Investment grade', definition: 'Investment-grade corporate credit.' },
-      { name: 'High yield', definition: 'High-yield corporate bonds and leveraged loans.' },
+      { name: 'High yield', definition: 'High-yield corporate bonds.' },
+      { name: 'Leveraged loans', definition: 'Broadly syndicated leveraged loans. Direct lending is Private Markets › Private credit.' },
+      { name: 'Convertibles', definition: 'Convertible bonds.' },
       { name: 'EM debt', definition: 'Emerging-market sovereign and corporate debt, hard or local currency.' },
-      { name: 'Securitised & ABS', definition: 'Mortgage-backed, asset-backed, CLOs and other securitised debt.' },
+      { name: 'Securitised & ABS', definition: 'Public mortgage-backed, asset-backed, CLOs and other securitised debt. Private asset-based lending is Private Markets › Asset-based finance.' },
       { name: 'Municipal', definition: 'US municipal bonds.' },
-      { name: 'Short duration & cash', definition: 'Money markets, cash, ultra-short and short-duration bonds.' },
+      { name: 'Short duration', definition: 'Ultra-short and short-duration bond strategies.' },
+      { name: 'Money markets & cash', definition: 'Money market funds, cash and cash-like instruments.' },
     ],
   },
   {
     name: 'Private Markets',
     definition: 'Private equity, venture, private credit and direct lending, private infrastructure and real estate funds, secondaries, fund-raising and valuations of private funds, hedge funds and other alternative strategies.',
     subs: [
-      { name: 'Private equity', definition: 'Buyouts and private equity funds.' },
+      { name: 'Private equity & buyouts', definition: 'Buyouts and private equity funds.' },
       { name: 'Venture & growth', definition: 'Venture capital and growth equity.' },
-      { name: 'Private credit', definition: 'Direct lending, private debt, asset-based finance.' },
+      { name: 'Private credit', definition: 'Direct lending and other private corporate debt.' },
+      { name: 'Asset-based finance', definition: 'Private lending secured on assets or receivables (asset-based finance, specialty finance).' },
       { name: 'Infrastructure', definition: 'Private infrastructure investment.' },
       { name: 'Real estate', definition: 'Private real estate equity and debt.' },
       { name: 'Secondaries', definition: 'Secondaries, continuation funds, GP-led deals.' },
     ],
   },
   {
-    name: 'Real Assets',
-    definition: 'Listed real estate and infrastructure, commodities as markets (energy, metals, agriculture prices and supply), gold, natural resources, timber and farmland.',
+    name: 'Commodities & Real Assets',
+    definition: 'Commodities as markets (energy, metals, agriculture prices and supply), gold, natural resources, timber and farmland, and real assets as a whole. Listed real estate and infrastructure are Equities; private real estate and infrastructure are Private Markets.',
     subs: [
-      { name: 'Listed real estate', definition: 'REITs and listed property.' },
-      { name: 'Listed infrastructure', definition: 'Listed infrastructure and utilities as an asset class.' },
       { name: 'Commodities', definition: 'Energy, industrial metals and agricultural commodities as markets.' },
       { name: 'Gold & precious metals', definition: 'Gold, silver and other precious metals.' },
       { name: 'Natural resources', definition: 'Natural-resource equities, timber and farmland.' },
+      { name: 'Real assets (across public and private)', definition: 'Real assets as a whole: a piece covering real estate, infrastructure and other real assets across listed and private markets.' },
     ],
   },
   {
@@ -147,6 +160,7 @@ export const THEME_PARENTS: ThemeParent[] = [
     { name: 'Active vs Passive', definition: "Active management's case, passive growth, active share, fee debates." },
     { name: 'Portfolio Construction & Diversification', definition: 'Allocation methods, stock-bond correlation, total portfolio approach, rebalancing.' },
     { name: 'Behavioural Finance', definition: 'Investor behaviour, biases, sentiment.' },
+    { name: 'Hedge Funds & Alternatives', definition: 'Hedge fund strategies and performance, liquid alternatives, absolute return, trend following and other diversifying strategies.' },
   ] },
   { name: 'AI & Technology', kind: 'topic', children: [
     { name: 'AI Adoption & Economics', definition: "How AI is used, its productivity and profit case, AI companies' economics." },
@@ -188,7 +202,8 @@ export const THEME_PARENTS: ThemeParent[] = [
   ] },
   { name: 'Industry & Clients', kind: 'topic', children: [
     { name: 'Pensions & Retirement', definition: 'Pension policy and reform, DB and DC schemes, decumulation.' },
-    { name: 'Wealth & Private Markets Access', definition: 'Private wealth, advisers, retail access to private markets.' },
+    { name: 'Wealth & Private Markets Access', definition: 'Private wealth, advisers and adviser practice management, family offices, retail access to private markets.' },
+    { name: 'Tax & Wealth Planning', definition: 'Tax-aware and tax-efficient investing, inheritance and estate planning, direct indexing as a tax tool, wealth transfer.' },
     { name: 'Asset Management Industry', definition: 'Fees, consolidation, distribution, business models.' },
   ] },
   { name: 'Regulation & Stability', kind: 'topic', children: [
@@ -209,6 +224,10 @@ export const OVERLAP_RULES = [
   'Regions: the most specific region (Korea & Taiwan rather than Asia ex-Japan; Brazil is Latin America, not Emerging Markets) unless the piece covers the wider group.',
   'Styles vs sub-asset class: a value-equities piece takes Value as a theme and Equities › Style as sub-asset class, set independently.',
   'Quality is an equity theme only; never tag it on a credit or bond piece.',
+  'Real estate and infrastructure: listed (REITs, listed infrastructure) are Equities sub-classes; private funds and direct investment are Private Markets; a piece about real assets as a whole, across both, is Commodities & Real Assets › Real assets (across public and private).',
+  'Asset-based finance vs Securitised & ABS: private asset-backed lending vs public asset-backed bonds.',
+  'Hedge Funds & Alternatives (theme) vs Multi-Asset › Liquid alternatives (sub-class): set independently; a piece on trend following in portfolios can take both.',
+  'Tax & Wealth Planning vs Pensions & Retirement: tax and estate planning for investors vs pension policy and scheme design.',
 ]
 
 export const TOPIC_THEMES = THEME_PARENTS.filter(p => p.kind === 'topic').flatMap(p => p.children.map(c => c.name))
@@ -224,6 +243,15 @@ export type ContentPurpose = typeof CONTENT_PURPOSES[number]
 
 export const FORMATS = ['article', 'research paper', 'outlook', 'podcast', 'video', 'webinar', 'chart', 'social'] as const
 export type Format = typeof FORMATS[number]
+
+// Kind of piece (1.1.0): what sort of piece it is, so like is compared with like
+export const KINDS = ['essay', 'periodic', 'qa', 'other'] as const
+export type Kind = typeof KINDS[number]
+export const KIND_GUIDE = `essay (a standalone argued article, research or white paper) · periodic (an outlook, a regular review, letter, round-up or update tied to a period: weekly, monthly, quarterly, mid-year, annual, capital market assumptions) · qa (a Q&A, interview, panel, podcast or video transcript) · other (a product or fund page, landing page, press release, event page)`
+export const SHELF_LIFE_GUIDE = `0 reacts to this week's data or event, stale within a month · 1 useful for this quarter · 2 useful for this year · 3 an argument that will hold for longer`
+export const ARGUMENT_GUIDE = `0 describes or reports what happened, no view · 1 summarises the consensus or several views · 2 takes a clear view of its own · 3 argues a distinctive position with evidence, one a reader could disagree with`
+/** Thought leadership as a region (1.1.0): shelf life 2+ and argument 2+ */
+export const isThoughtLeadership = (t: { shelf_life?: number | null; argument?: number | null }) => (t.shelf_life ?? 0) >= 2 && (t.argument ?? 0) >= 2
 
 /** Exact-name match, case-insensitive; anything else is dropped rather than guessed */
 export function pick<T extends string>(allowed: readonly T[], values: unknown, max: number): T[] {

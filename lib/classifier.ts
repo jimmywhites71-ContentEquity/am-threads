@@ -9,8 +9,8 @@
 
 import Anthropic from '@anthropic-ai/sdk'
 import {
-  ASSET_CLASSES, ASSET_CLASS_NAMES, CONTENT_PURPOSES, OVERLAP_RULES, REGION_FACETS, SUB_ASSET_KEYS,
-  TAXONOMY_VERSION, THEME_PARENTS, TOPIC_THEMES, VEHICLE_FACETS, pick, type ContentPurpose,
+  ARGUMENT_GUIDE, ASSET_CLASSES, ASSET_CLASS_NAMES, CONTENT_PURPOSES, KINDS, KIND_GUIDE, OVERLAP_RULES, REGION_FACETS, SHELF_LIFE_GUIDE,
+  SUB_ASSET_KEYS, TAXONOMY_VERSION, THEME_PARENTS, TOPIC_THEMES, VEHICLE_FACETS, pick, type ContentPurpose, type Kind,
 } from './taxonomy'
 import { SUMMARY_MODEL, TAGGER_MODEL, addUsage, type Usage } from './usage'
 
@@ -54,6 +54,10 @@ export interface Tags {
   explicit_call: boolean
   call_text: string | null
   theme_candidate: string | null
+  kind: Kind | null
+  shelf_life: number | null
+  argument: number | null
+  series: boolean
   taxonomy_version: string
 }
 
@@ -77,7 +81,15 @@ CONTENT PURPOSE (exactly one): house view (the firm's own forward view or positi
 
 EXPLICIT CALL: true only if the piece states a directional view an investor could act on (overweight/underweight, prefer X over Y, a forecast level or direction). Give it in under 15 words of your own in call_text.
 
-THEME CANDIDATE: if the piece is substantially about something no theme covers, name it in 2-4 words; otherwise null.`
+THEME CANDIDATE: if the piece is substantially about something no theme covers, name it in 2-4 words; otherwise null.
+
+KIND OF PIECE (exactly one): ${KIND_GUIDE}
+
+SHELF LIFE (0-3): ${SHELF_LIFE_GUIDE}
+
+ARGUMENT (0-3): ${ARGUMENT_GUIDE}
+
+SERIES: true if the piece is an instalment of a named recurring series or franchise (e.g. "Macro Signposts", "Weekly market insights", "Chart to Watch", "3 in 3", a numbered or dated letter); otherwise false.`
 }
 
 // The instructions and taxonomy guide are the same in every call, so they go in a cached system
@@ -89,7 +101,7 @@ function systemPrompt(): string {
 ${guide()}
 
 Reply with one line of JSON per piece, in order, nothing else:
-{"n":1,"asset_classes":[],"sub_asset_classes":[],"primary_theme":null,"secondary_themes":[],"regions":[],"vehicles":[],"content_purpose":"market commentary","explicit_call":false,"call_text":null,"theme_candidate":null}`
+{"n":1,"asset_classes":[],"sub_asset_classes":[],"primary_theme":null,"secondary_themes":[],"regions":[],"vehicles":[],"content_purpose":"market commentary","explicit_call":false,"call_text":null,"theme_candidate":null,"kind":"essay","shelf_life":1,"argument":1,"series":false}`
 }
 
 export interface TagOptions { model?: string; /** 'direct' answers without a reasoning step (Sonnet 5.5); 'default' lets the model reason first */ mode?: 'direct' | 'default' }
@@ -117,6 +129,8 @@ async function tagBatch(c: Anthropic, model: string, batch: TagInput[], usage?: 
   return out
 }
 
+const scale03 = (v: unknown) => { const n = Number(v); return Number.isInteger(n) && n >= 0 && n <= 3 ? n : null }
+
 /** Keep only labels from the fixed lists, with the limits the rules set */
 export function normaliseTags(row: any): Tags {
   const asset_classes = pick(ASSET_CLASS_NAMES, row.asset_classes, 2)
@@ -142,6 +156,10 @@ export function normaliseTags(row: any): Tags {
     explicit_call,
     call_text: explicit_call && row.call_text ? String(row.call_text).slice(0, 140) : null,
     theme_candidate: row.theme_candidate ? String(row.theme_candidate).slice(0, 60) : null,
+    kind: pick(KINDS, [row.kind], 1)[0] || null,
+    shelf_life: scale03(row.shelf_life),
+    argument: scale03(row.argument),
+    series: row.series === true,
     taxonomy_version: TAXONOMY_VERSION,
   }
 }

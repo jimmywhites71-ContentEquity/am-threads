@@ -73,13 +73,27 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ ...stats, tagged: tags.size, usage, cost_usd: costOf(usage), sample })
   }
 
+  // Taxonomy 1.1.0 fields (kind, shelf_life, argument, series) need supabase/taxonomy-1.1.sql; until
+  // it has run, tags are stored without them rather than not at all
+  let newFields = true
   for (const [id, t] of tags) {
-    const { error: upErr } = await sb.from('pieces').update({
+    const row: Record<string, unknown> = {
       asset_classes: t.asset_classes, sub_asset_classes: t.sub_asset_classes, primary_theme: t.primary_theme,
       secondary_themes: t.secondary_themes, subject_regions: t.regions, vehicles: t.vehicles,
       content_purpose: t.content_purpose, explicit_call: t.explicit_call, call_text: t.call_text,
       theme_candidate: t.theme_candidate, taxonomy_version: t.taxonomy_version, tagged_at: new Date().toISOString(),
-    }).eq('id', id)
+    }
+    if (newFields) Object.assign(row, { kind: t.kind, shelf_life: t.shelf_life, argument: t.argument, series: t.series })
+    else row.taxonomy_version = `${t.taxonomy_version}-partial`
+    let { error: upErr } = await sb.from('pieces').update(row).eq('id', id)
+    if (upErr && newFields && /kind|shelf_life|argument|series/.test(upErr.message)) {
+      newFields = false
+      stats.errors.push('taxonomy 1.1 columns missing: run supabase/taxonomy-1.1.sql')
+      for (const k of ['kind', 'shelf_life', 'argument', 'series']) delete row[k]
+      // Marked partial, so these pieces are tagged again (with the new fields) once the columns exist
+      row.taxonomy_version = `${t.taxonomy_version}-partial`
+      ;({ error: upErr } = await sb.from('pieces').update(row).eq('id', id))
+    }
     if (!upErr) stats.tagged++
   }
 
