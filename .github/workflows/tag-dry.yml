@@ -13,11 +13,12 @@ jobs:
     env:
       SITE_RAW: ${{ vars.SITE_URL }}
       AUTH: 'Authorization: Bearer ${{ secrets.PIPELINE_API_KEY }}'
+      ANTHROPIC_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       GH_TOKEN: ${{ github.token }}
     steps:
       - run: |
           SITE="${SITE_RAW%/}"
-          curl -sS -X POST "$SITE/api/classify?dry=1&limit=${{ inputs.limit }}" -H "$AUTH" --max-time 300 -o dry.json
+          curl -sS -X POST "$SITE/api/classify?dry=1&limit=${{ inputs.limit }}" -H "$AUTH" -H "x-anthropic-key: $ANTHROPIC_KEY" --max-time 300 -o dry.json
           head -c 300 dry.json; echo
           SHA=$(gh api "repos/$GITHUB_REPOSITORY/contents/exports/tag-dry.json?ref=judge-previews" --jq .sha 2>/dev/null || true)
           base64 -w0 dry.json > b64.txt

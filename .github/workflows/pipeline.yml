@@ -35,6 +35,7 @@ jobs:
     env:
       SITE_RAW: ${{ vars.SITE_URL }}
       AUTH: 'Authorization: Bearer ${{ secrets.PIPELINE_API_KEY }}'
+      ANTHROPIC_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
     steps:
       - name: Site address
         run: echo "SITE=${SITE_RAW%/}" >> "$GITHUB_ENV"
@@ -47,7 +48,7 @@ jobs:
           offset=0
           while [ -n "$offset" ] && [ "$offset" != "null" ]; do
             echo "discover offset $offset" >> run.log
-            curl -sS -L -X POST "$SITE/api/discover?days=${{ github.event.inputs.days || '14' }}&wave=${{ github.event.inputs.wave || '1' }}&offset=$offset&batch=8&approve=${{ github.event.inputs.approve_backfill || 'no' }}" -H "$AUTH" --max-time 300 -o discover.json || echo '{}' > discover.json
+            curl -sS -L -X POST "$SITE/api/discover?days=${{ github.event.inputs.days || '14' }}&wave=${{ github.event.inputs.wave || '1' }}&offset=$offset&batch=8&approve=${{ github.event.inputs.approve_backfill || 'no' }}" -H "$AUTH" -H "x-anthropic-key: $ANTHROPIC_KEY" --max-time 300 -o discover.json || echo '{}' > discover.json
             cat discover.json; echo
             if jq -e 'has("next_offset")' discover.json >/dev/null 2>&1; then
               jq -c '{offset, next_offset, total_sources, errors: [.sources | to_entries[] | select(.value.error) | .key]}' discover.json >> run.log
@@ -63,7 +64,7 @@ jobs:
         run: |
           fails=0
           for i in $(seq 1 ${{ github.event.inputs.pages || '150' }}); do
-            curl -sS -L -X POST "$SITE/api/process?limit=80" -H "$AUTH" --max-time 300 -o p.json || true
+            curl -sS -L -X POST "$SITE/api/process?limit=80" -H "$AUTH" -H "x-anthropic-key: $ANTHROPIC_KEY" --max-time 300 -o p.json || true
             if jq -e '.taken' p.json >/dev/null 2>&1; then
               fails=0; jq -c '{taken, pieces_new, editions_added, failed, skipped_old, remaining, seconds}' p.json | tee -a run.log
               [ "$(jq -r '.remaining // 0' p.json)" -gt 0 ] && [ "$(jq -r '.taken // 0' p.json)" -gt 0 ] || break
@@ -77,7 +78,7 @@ jobs:
         run: |
           fails=0
           for i in $(seq 1 ${{ github.event.inputs.pages || '150' }}); do
-            curl -sS -L -X POST "$SITE/api/classify?limit=60&backfill=${{ github.event.inputs.approve_backfill || 'no' }}" -H "$AUTH" --max-time 300 -o c.json || true
+            curl -sS -L -X POST "$SITE/api/classify?limit=60&backfill=${{ github.event.inputs.approve_backfill || 'no' }}" -H "$AUTH" -H "x-anthropic-key: $ANTHROPIC_KEY" --max-time 300 -o c.json || true
             if jq -e '.taken' c.json >/dev/null 2>&1; then
               fails=0; jq -c '{taken, summarised, tagged, remaining, seconds, cost_usd, stopped, errors: (.errors[0:2])}' c.json | tee -a run.log
               [ -n "$(jq -r '.stopped // empty' c.json)" ] && break

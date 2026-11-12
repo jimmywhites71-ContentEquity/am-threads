@@ -27,6 +27,7 @@ jobs:
     env:
       SITE_RAW: ${{ vars.SITE_URL }}
       AUTH: 'Authorization: Bearer ${{ secrets.PIPELINE_API_KEY }}'
+      ANTHROPIC_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
       GH_TOKEN: ${{ github.token }}
     steps:
       - run: |
@@ -46,7 +47,7 @@ jobs:
           for M in ${{ inputs.models }}; do
             [ "$M" = "none" ] && continue
             for i in $(seq 1 40); do
-              curl -sS -X POST "$SITE/api/cj/judge?set=$SET&model=$M&pairs=${{ inputs.pairs }}" -H "$AUTH" --max-time 300 -o j.json || true
+              curl -sS -X POST "$SITE/api/cj/judge?set=$SET&model=$M&pairs=${{ inputs.pairs }}" -H "$AUTH" -H "x-anthropic-key: $ANTHROPIC_KEY" --max-time 300 -o j.json || true
               python3 -c "import json; d=json.load(open('j.json')); print({k: d.get(k) for k in ['model','judged','failed','remaining','cost_usd','month_cj_usd','stopped','errors']})" || cat j.json
               python3 -c "import json,sys; d=json.load(open('j.json')); sys.exit(0 if (d.get('remaining',0)>0 and d.get('judged',0)>0) else 1)" || break
             done
