@@ -1,0 +1,25 @@
+name: Tagging dry run
+# Tags a sample with the current taxonomy without storing anything, and saves the result as JSON to
+# the judge-previews branch for checking. Costs about $0.25 per 100 pieces.
+on:
+  workflow_dispatch:
+    inputs:
+      limit: { description: 'How many pieces', required: false, default: '90' }
+permissions:
+  contents: write
+jobs:
+  dry:
+    runs-on: ubuntu-latest
+    env:
+      SITE_RAW: ${{ vars.SITE_URL }}
+      AUTH: 'Authorization: Bearer ${{ secrets.PIPELINE_API_KEY }}'
+      GH_TOKEN: ${{ github.token }}
+    steps:
+      - run: |
+          SITE="${SITE_RAW%/}"
+          curl -sS -X POST "$SITE/api/classify?dry=1&limit=${{ inputs.limit }}" -H "$AUTH" --max-time 300 -o dry.json
+          head -c 300 dry.json; echo
+          SHA=$(gh api "repos/$GITHUB_REPOSITORY/contents/exports/tag-dry.json?ref=judge-previews" --jq .sha 2>/dev/null || true)
+          base64 -w0 dry.json > b64.txt
+          if [ -n "$SHA" ]; then gh api -X PUT "repos/$GITHUB_REPOSITORY/contents/exports/tag-dry.json" -f message=dry -f branch=judge-previews -f sha="$SHA" -F content=@b64.txt >/dev/null
+          else gh api -X PUT "repos/$GITHUB_REPOSITORY/contents/exports/tag-dry.json" -f message=dry -f branch=judge-previews -F content=@b64.txt >/dev/null; fi
