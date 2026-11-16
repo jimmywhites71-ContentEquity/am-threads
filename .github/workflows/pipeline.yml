@@ -35,7 +35,7 @@ permissions:
 jobs:
   pipeline:
     runs-on: ubuntu-latest
-    timeout-minutes: 120
+    timeout-minutes: 350
     env:
       SITE_RAW: ${{ vars.SITE_URL }}
       AUTH: 'Authorization: Bearer ${{ secrets.PIPELINE_API_KEY }}'
