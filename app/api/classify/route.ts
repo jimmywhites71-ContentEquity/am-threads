@@ -43,10 +43,15 @@ export async function POST(req: NextRequest) {
     return NextResponse.json({ taken: 0, tagged: 0, remaining: 0, stopped: `daily cap reached (${spent.taggedToday} of ${cap} pieces today)` })
   }
 
-  const { data: rows, error } = await sb.from('pieces')
+  // ?since_days=183: only pieces published in that window (James, 16 Nov: backfill the last six
+  // months within the $70 approved for November; the rest of the year follows in December)
+  const sinceDays = Number(q.get('since_days')) || 0
+  let pick = sb.from('pieces')
     .select('id, manager_id, title, summary, format, taxonomy_version, piece_text(text)')
     .in('status', ['read', 'thin', 'gated'])
     .or(`taxonomy_version.is.null,taxonomy_version.neq.${TAXONOMY_VERSION}`)
+  if (sinceDays) pick = pick.gte('published_at', new Date(Date.now() - sinceDays * 864e5).toISOString())
+  const { data: rows, error } = await pick
     .order('published_at', { ascending: false, nullsFirst: false }).limit(dry ? limit : Math.min(limit, allowance))
   if (error) return NextResponse.json({ error: error.message }, { status: 500 })
 
