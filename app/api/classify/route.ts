@@ -31,7 +31,10 @@ export async function POST(req: NextRequest) {
   const spent = await spendSoFar(sb)
   const backfill = q.get('backfill') === 'yes'
   const cap = backfill ? backfillDailyCap() : dailyCap()
-  const budget = monthlyBudget() + (backfill ? backfillBudget() : 0)
+  // An approved backfill can carry its own allowance (?backfill_budget=60, at most $100), set when
+  // James approves it, so the limit can change without the Vercel dashboard (16 Nov: $60 approved)
+  const approvedAllowance = Math.min(Number(q.get('backfill_budget')) || 0, 100)
+  const budget = monthlyBudget() + (backfill ? (approvedAllowance || backfillBudget()) : 0)
   const allowance = Math.max(0, cap - spent.taggedToday)
   if (!dry && spent.monthUsd >= budget) {
     return NextResponse.json({ taken: 0, tagged: 0, remaining: 0, stopped: `monthly budget reached ($${spent.monthUsd.toFixed(2)} of $${budget}${backfill ? ' including the backfill allowance' : ''})` })
