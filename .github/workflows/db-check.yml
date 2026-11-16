@@ -1,0 +1,18 @@
+name: Database check
+# Checks whether the taxonomy 1.1 columns exist on pieces, and reports to the "Pipeline status" issue as a comment.
+on: workflow_dispatch
+permissions:
+  issues: write
+jobs:
+  check:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+    steps:
+      - run: |
+          R=$(curl -sS "$URL/rest/v1/pieces?select=kind,shelf_life,argument,series&limit=1" -H "apikey: $KEY" -H "Authorization: Bearer $KEY")
+          echo "$R"
+          N=$(gh api "repos/$GITHUB_REPOSITORY/issues?state=open&per_page=30" --jq '[.[]|select(.title|test("status";"i"))][0].number')
+          gh api -X POST repos/$GITHUB_REPOSITORY/issues/$N/comments -f body="Database check (taxonomy 1.1 columns): $R" >/dev/null
