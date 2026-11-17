@@ -3,6 +3,7 @@ import { db, logRun, unauthorised } from '@/lib/db'
 import { pieceKey } from '@/lib/dedupe'
 import { readPage } from '@/lib/extract'
 import { pieceRow } from '@/lib/piece-row'
+import { MANAGERS } from '@/lib/sources'
 
 export const maxDuration = 300
 
@@ -20,22 +21,25 @@ export async function POST(req: NextRequest) {
   const started = Date.now()
   const deadline = started + 240_000
   const q = req.nextUrl.searchParams
-  const limit = Math.min(Number(q.get('limit') || 80), 150)
+  const limit = Math.min(Number(q.get('limit') || 80), 300)
   const oldest = new Date(Date.now() - Number(q.get('before_days') || 400) * 864e5)
   const sb = db()
 
-  // Take the newest waiting addresses, then spread the batch across houses (a few each), so one
-  // house with hundreds of pages cannot hold up the rest and each site is read gently
-  const { data: pool, error } = await sb.from('editions').select('url, source_id, manager_id, region, channel, lastmod, attempts')
-    .eq('status', 'new').lt('attempts', MAX_ATTEMPTS).order('lastmod', { ascending: false, nullsFirst: false }).limit(3000)
-  if (error) return NextResponse.json({ error: error.message }, { status: 500 })
-  const perHouse = new Map<string, number>()
-  const queue = (pool || []).filter(e => {
-    const n = perHouse.get(e.manager_id) || 0
-    if (n >= PER_HOUSE) return false
-    perHouse.set(e.manager_id, n + 1)
-    return true
-  }).slice(0, limit)
+  // A few of the newest waiting addresses from EVERY house, so one house with thousands queued
+  // cannot fill the batch (16 Nov: the single newest-3,000 query was capped at 1,000 rows by the
+  // database and held only two or three houses, so a backfill read about 20 pages a call)
+  const houses = MANAGERS.map(m => m.id)
+  const perHouseRows: any[][] = []
+  for (let k = 0; k < houses.length; k += 20) {
+    const chunk = await Promise.all(houses.slice(k, k + 20).map(async id => (await sb.from('editions')
+      .select('url, source_id, manager_id, region, channel, lastmod, attempts')
+      .eq('manager_id', id).eq('status', 'new').lt('attempts', MAX_ATTEMPTS)
+      .order('lastmod', { ascending: false, nullsFirst: false }).limit(PER_HOUSE)).data || []))
+    perHouseRows.push(...chunk)
+  }
+  // Round-robin across houses up to the limit
+  const queue: any[] = []
+  for (let r = 0; r < PER_HOUSE && queue.length < limit; r++) for (const rows of perHouseRows) if (rows[r] && queue.length < limit) queue.push(rows[r])
 
   const stats = { taken: queue?.length || 0, pieces_new: 0, editions_added: 0, failed: 0, gated: 0, skipped_old: 0, errors: {} as Record<string, number> }
   const note = (k: string) => { stats.errors[k] = (stats.errors[k] || 0) + 1 }

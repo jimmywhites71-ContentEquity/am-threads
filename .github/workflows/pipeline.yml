@@ -72,7 +72,7 @@ jobs:
         run: |
           fails=0
           for i in $(seq 1 ${{ github.event.inputs.pages || '150' }}); do
-            curl -sS -L -X POST "$SITE/api/process?limit=80" -H "$AUTH" -H "x-anthropic-key: $ANTHROPIC_KEY" --max-time 300 -o p.json || true
+            curl -sS -L -X POST "$SITE/api/process?limit=200" -H "$AUTH" -H "x-anthropic-key: $ANTHROPIC_KEY" --max-time 300 -o p.json || true
             if jq -e '.taken' p.json >/dev/null 2>&1; then
               fails=0; jq -c '{taken, pieces_new, editions_added, failed, skipped_old, remaining, seconds}' p.json | tee -a run.log
               [ "$(jq -r '.remaining // 0' p.json)" -gt 0 ] && [ "$(jq -r '.taken // 0' p.json)" -gt 0 ] || break
