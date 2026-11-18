@@ -38,7 +38,7 @@ const SITES: Record<string, Site> = {
 // Private credit houses without a readable sitemap (18 Nov); listing addresses checked by --probe
 Object.assign(SITES, {
   carlyle: { listings: ['https://www.carlyle.com/insights-resources', 'https://www.carlyle.com/insights-resources/insights', 'https://www.carlyle.com/global-insights'], include: /^https:\/\/www\.carlyle\.com\/(insights-resources|global-insights)\/[a-z0-9-]+(\/[a-z0-9-]+)+$/ },
-  oaktree: { listings: ['https://www.oaktreecapital.com/insights', 'https://www.oaktreecapital.com/insights/memos'], include: /^https:\/\/www\.oaktreecapital\.com\/insights\/[a-z0-9-]+\/[a-z0-9-]+(\/[a-z0-9-]+)?$/ },
+  oaktree: { listings: ['https://www.oaktreecapital.com/insights', 'https://www.oaktreecapital.com/insights/memos'], exclude: /-podcast\/|insight-video\/|-audio$/, include: /^https:\/\/www\.oaktreecapital\.com\/insights\/[a-z0-9-]+\/[a-z0-9-]+(\/[a-z0-9-]+)?$/ },
   'ab-carval': { listings: ['https://www.carval.com/insights', 'https://www.carval.com/news', 'https://www.carval.com/perspectives'], include: /^https:\/\/www\.carval\.com\/(insights|news|perspectives|insight)\/[a-z0-9-]+/ },
   'axa-im': { listings: ['https://www.axa-im.com/investment-institute', 'https://www.axa-im.com/insights', 'https://www.axa-im.com/alts-insights'], include: /^https:\/\/www\.axa-im\.com\/(investment-institute|insights|alts-insights)\/[a-z0-9-]+\/[a-z0-9-]+/ },
   bayview: { listings: ['https://www.bayviewassetmanagement.com/insights', 'https://www.bayviewassetmanagement.com/news', 'https://www.bayviewassetmanagement.com'], include: /^https:\/\/www\.bayviewassetmanagement\.com\/(insights|news|perspectives|research)\/[a-z0-9-]+/ },
@@ -89,7 +89,13 @@ async function collectLinks(page: Page, site: Site): Promise<string[]> {
         if (await more.isVisible({ timeout: 800 }).catch(() => false)) { await more.click({ timeout: 3000 }).catch(() => {}); await page.waitForTimeout(2500) }
         else { await page.mouse.wheel(0, 20000); await page.waitForTimeout(1500) }
       }
-      console.log(`  listing ${url}: ${found.size} article links so far`)
+      console.log(`  listing ${url}: ${found.size} article links so far (page title: ${(await page.title()).slice(0, 60)})`)
+      if (probe && !found.size) {
+        const origin = new URL(url).origin
+        const all: string[] = await page.$$eval('a[href]', as => as.map(a => (a as HTMLAnchorElement).href))
+        const same = Array.from(new Set(all.filter(h => h.startsWith(origin)).map(h => h.split('#')[0]))).filter(h => h.split('/').length > 4)
+        console.log(`    ${all.length} links on the page; deeper same-site links, sample:`); same.slice(0, 25).forEach(h => console.log(`      ${h}`))
+      }
     } catch (err: any) { console.log(`  listing ${url} failed: ${String(err?.message || err).slice(0, 120)}`) }
   }
   // The site's sitemaps, fetched through the browser (listing pages often show only the latest)
