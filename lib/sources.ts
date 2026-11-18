@@ -288,6 +288,10 @@ const FIRST_SOURCES: ManagerSource[] = [
 
 // House-specific settings found by the source check (17 Oct 2026)
 const OVERRIDES: Record<string, Partial<ManagerSource>> = {
+  // Private credit houses (18 Nov)
+  hps: { pageInclude: '/insights-and-news/[^?#]+' },
+  varde: { pageInclude: '^https://varde\\.com/[a-z0-9-]{25,}/?$' },
+  roundshield: { pageInclude: '/news/[^?#]+', ignoreLastmod: true },
   russell: { pageInclude: '/(blog|insights|perspectives)/[^?#]+', ignoreLastmod: true },
   newton: { ignoreLastmod: true },
   mercer: { ignoreLastmod: true },
@@ -322,7 +326,8 @@ const OVERRIDES: Record<string, Partial<ManagerSource>> = {
 // keep their site source too, in case it was a slow day.
 // msim and nuveen: their own sites time out or carry no sitemap, so they rely on headlines (23 Oct)
 // johcm: its sitemap lists people and funds but no insights, so headlines only
-const REFUSING = new Set(['johcm', 'fundsmith', 'premier-miton', 'artemis', 'rbc-gam', 'msim', 'nuveen', 'aegon-am', 'fidelity-intl', 'manulife-im', 'neuberger', 'aviva-investors', 'blackstone', 'ninety-one', 'rlam'])
+// carlyle (403), oaktree, ab-carval, axa-im, bayview (no sitemap): read in a browser (scripts/browser-collect.ts)
+const REFUSING = new Set(['carlyle', 'oaktree', 'ab-carval', 'axa-im', 'bayview', 'johcm', 'fundsmith', 'premier-miton', 'artemis', 'rbc-gam', 'msim', 'nuveen', 'aegon-am', 'fidelity-intl', 'manulife-im', 'neuberger', 'aviva-investors', 'blackstone', 'ninety-one', 'rlam'])
 const HEADLINE_SITES: [manager: string, site: string][] = [
   ['aegon-am', 'aegonam.com'],  // insights load by JavaScript, so headlines only
   ['lgam', 'am.landg.com'],     // the listing page shows only the latest ten; headlines fill the gaps

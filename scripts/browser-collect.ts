@@ -35,6 +35,15 @@ const SITES: Record<string, Site> = {
   },
 }
 
+// Private credit houses without a readable sitemap (18 Nov); listing addresses checked by --probe
+Object.assign(SITES, {
+  carlyle: { listings: ['https://www.carlyle.com/insights-resources', 'https://www.carlyle.com/insights-resources/insights', 'https://www.carlyle.com/global-insights'], include: /^https:\/\/www\.carlyle\.com\/(insights-resources|global-insights)\/[a-z0-9-]+(\/[a-z0-9-]+)+$/ },
+  oaktree: { listings: ['https://www.oaktreecapital.com/insights', 'https://www.oaktreecapital.com/insights/memos'], include: /^https:\/\/www\.oaktreecapital\.com\/insights\/[a-z0-9-]+\/[a-z0-9-]+(\/[a-z0-9-]+)?$/ },
+  'ab-carval': { listings: ['https://www.carval.com/insights', 'https://www.carval.com/news', 'https://www.carval.com/perspectives'], include: /^https:\/\/www\.carval\.com\/(insights|news|perspectives|insight)\/[a-z0-9-]+/ },
+  'axa-im': { listings: ['https://www.axa-im.com/investment-institute', 'https://www.axa-im.com/insights', 'https://www.axa-im.com/alts-insights'], include: /^https:\/\/www\.axa-im\.com\/(investment-institute|insights|alts-insights)\/[a-z0-9-]+\/[a-z0-9-]+/ },
+  bayview: { listings: ['https://www.bayviewassetmanagement.com/insights', 'https://www.bayviewassetmanagement.com/news', 'https://www.bayviewassetmanagement.com'], include: /^https:\/\/www\.bayviewassetmanagement\.com\/(insights|news|perspectives|research)\/[a-z0-9-]+/ },
+} as Record<string, Site>)
+
 const DISMISS = ['#onetrust-accept-btn-handler', 'button:has-text("Accept all")', 'button:has-text("Accept All")', 'button:has-text("I accept")', 'button:has-text("Agree")', 'button:has-text("Accept")', '[aria-label="Close"]']
 async function dismiss(page: Page) {
   for (const sel of DISMISS) { try { const b = page.locator(sel).first(); if (await b.isVisible({ timeout: 400 })) { await b.click({ timeout: 1500 }); await page.waitForTimeout(300) } } catch {} }
