@@ -35,9 +35,12 @@ const SITES: Record<string, Site> = {
   },
 }
 
-// Private credit houses without a readable sitemap (18 Nov); listing addresses checked by --probe
+// Private credit houses without a readable sitemap (18 Nov); listing addresses checked by --probe.
+// carval.com now redirects to alliancebernstein.com and axa-im.com to BNP Paribas AM, so AB CarVal
+// and AXA IM content is collected under those houses. Bayview publishes no insights pages. Carlyle's
+// insights-resources pages sit behind a bot challenge; its Global Insights pages do not.
 Object.assign(SITES, {
-  carlyle: { listings: ['https://www.carlyle.com/insights-resources', 'https://www.carlyle.com/insights-resources/insights', 'https://www.carlyle.com/global-insights'], include: /^https:\/\/www\.carlyle\.com\/(insights-resources|global-insights)\/[a-z0-9-]+(\/[a-z0-9-]+)+$/ },
+  carlyle: { listings: ['https://www.carlyle.com/global-insights', 'https://www.carlyle.com/global-insights/research'], sitemaps: ['https://www.carlyle.com/sitemap.xml'], include: /^https:\/\/www\.carlyle\.com\/(insights-resources|global-insights)\/[a-z0-9-]+(\/[a-z0-9-]+)+$/ },
   oaktree: { listings: ['https://www.oaktreecapital.com/insights', 'https://www.oaktreecapital.com/insights/memos'], exclude: /-podcast\/|insight-video\/|-audio$/, include: /^https:\/\/www\.oaktreecapital\.com\/insights\/[a-z0-9-]+\/[a-z0-9-]+(\/[a-z0-9-]+)?$/ },
   'ab-carval': { listings: ['https://www.carval.com/insights', 'https://www.carval.com/news', 'https://www.carval.com/perspectives'], include: /^https:\/\/www\.carval\.com\/(insights|news|perspectives|insight)\/[a-z0-9-]+/ },
   'axa-im': { listings: ['https://www.axa-im.com/investment-institute', 'https://www.axa-im.com/insights', 'https://www.axa-im.com/alts-insights'], include: /^https:\/\/www\.axa-im\.com\/(investment-institute|insights|alts-insights)\/[a-z0-9-]+\/[a-z0-9-]+/ },
