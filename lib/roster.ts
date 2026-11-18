@@ -160,4 +160,20 @@ export const ROSTER: RosterRow[] = [
   // Added to wave 1 by James (17 Oct 2026)
   { rank: null, group: 'Gemcorp Capital', market: 'U.K.', aum_musd: null, status: 'wave 1', houses: ['gemcorp'], note: 'Not in the ranking; added by James.' },
   { rank: null, group: 'Nedgroup Investments', market: 'South Africa', aum_musd: null, status: 'wave 1', houses: ['nedgroup'], note: 'Not in the ranking; added by James. Its site refuses our reader: podcast feed and news headlines.' },
+  // Added by James for the private credit and asset-based finance work (18 Nov 2026)
+  { rank: null, group: 'AB CarVal', market: 'U.S.', aum_musd: null, status: 'wave 1', houses: ['ab-carval'], note: "Asset-based finance competitor; added by James. AB's asset-based and opportunistic credit arm." },
+  { rank: null, group: 'Blue Owl Capital', market: 'U.S.', aum_musd: null, status: 'wave 1', houses: ['blue-owl'], note: 'Asset-based finance competitor; added by James.' },
+  { rank: null, group: 'Sixth Street', market: 'U.S.', aum_musd: null, status: 'wave 1', houses: ['sixth-street'], note: 'Asset-based finance competitor; added by James.' },
+  { rank: null, group: 'BlackRock (HPS Investment Partners)', market: 'U.S.', aum_musd: null, status: 'wave 1', houses: ['hps'], note: 'Asset-based finance competitor; added by James. HPS is owned by BlackRock; kept separate as its own content brand.' },
+  { rank: null, group: 'Brookfield (Oaktree Capital Management)', market: 'U.S.', aum_musd: null, status: 'wave 1', houses: ['oaktree'], note: 'Asset-based finance competitor; added by James. Oaktree is majority-owned by Brookfield; kept separate as its own content brand.' },
+  { rank: null, group: 'The Carlyle Group', market: 'U.S.', aum_musd: null, status: 'wave 1', houses: ['carlyle'], note: 'Asset-based finance competitor; added by James.' },
+  { rank: null, group: 'Castlelake', market: 'U.S.', aum_musd: null, status: 'wave 1', houses: ['castlelake'], note: 'Asset-based finance competitor; added by James.' },
+  { rank: null, group: 'Fortress Investment Group', market: 'U.S.', aum_musd: null, status: 'wave 1', houses: ['fortress'], note: 'Asset-based finance competitor; added by James.' },
+  { rank: null, group: 'Bayview Asset Management', market: 'U.S.', aum_musd: null, status: 'wave 1', houses: ['bayview'], note: 'Asset-based finance competitor; added by James.' },
+  { rank: null, group: 'Värde Partners', market: 'U.S.', aum_musd: null, status: 'wave 1', houses: ['varde'], note: 'Asset-based finance competitor; added by James.' },
+  { rank: null, group: 'Round Hill Roundshield', market: 'U.K.', aum_musd: null, status: 'wave 1', houses: ['roundshield'], note: 'Asset-based finance competitor; added by James.' },
+  { rank: null, group: 'BNP Paribas (AXA Investment Managers)', market: 'France', aum_musd: null, status: 'wave 1', houses: ['axa-im'], note: 'Asset-based finance competitor; added by James. AXA IM is owned by BNP Paribas; kept separate as its own content brand.' },
+  { rank: null, group: 'Lombard Odier', market: 'Switzerland', aum_musd: null, status: 'wave 1', houses: ['loim'], note: 'Asset-based finance competitor; added by James.' },
+  { rank: null, group: 'Guggenheim Investments', market: 'U.S.', aum_musd: null, status: 'wave 1', houses: ['guggenheim'], note: 'Asset-based finance competitor; added by James.' },
+  { rank: null, group: 'TPG', market: 'U.S.', aum_musd: null, status: 'wave 1', houses: ['tpg'], note: 'Asset-based finance competitor; added by James. Includes TPG Angelo Gordon, its credit arm.' },
 ]

@@ -155,6 +155,23 @@ const HOUSES: HouseSpec[] = [
   // Added to wave 1 by James (17 Oct)
   ['gemcorp', 'Gemcorp Capital', 'https://www.gemcorpcapital.com', '/insight/[^?#]+'],
   ['nedgroup', 'Nedgroup Investments', 'https://www.nedgroupinvestments.com'],
+  // Added by James for the private credit and asset-based finance work (18 Nov 2026): AB's
+  // competitors in asset-based finance, and AB CarVal, AB's own asset-based and opportunistic arm
+  ['ab-carval', 'AB CarVal', 'https://www.carval.com'],
+  ['blue-owl', 'Blue Owl', 'https://www.blueowl.com'],
+  ['sixth-street', 'Sixth Street', 'https://sixthstreet.com'],
+  ['hps', 'HPS Investment Partners (BlackRock)', 'https://www.hpspartners.com'],
+  ['oaktree', 'Oaktree Capital Management', 'https://www.oaktreecapital.com'],
+  ['carlyle', 'Carlyle', 'https://www.carlyle.com'],
+  ['castlelake', 'Castlelake', 'https://www.castlelake.com'],
+  ['fortress', 'Fortress Investment Group', 'https://www.fortress.com'],
+  ['bayview', 'Bayview Asset Management', 'https://www.bayviewassetmanagement.com'],
+  ['varde', 'Värde Partners', 'https://www.varde.com'],
+  ['roundshield', 'Round Hill Roundshield', 'https://www.roundshield.com'],
+  ['axa-im', 'AXA Investment Managers (BNP Paribas)', 'https://www.axa-im.com'],
+  ['loim', 'Lombard Odier Investment Managers', 'https://am.lombardodier.com'],
+  ['guggenheim', 'Guggenheim Investments', 'https://www.guggenheiminvestments.com'],
+  ['tpg', 'TPG (incl. TPG Angelo Gordon)', 'https://www.tpg.com'],
   // Wave 2
   ['mackenzie', 'Mackenzie Investments', 'https://www.mackenzieinvestments.com'],
   ['amova', 'Amova Asset Management (formerly Nikko AM)', 'https://www.nikkoam.com'],
