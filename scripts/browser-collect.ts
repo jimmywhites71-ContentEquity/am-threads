@@ -21,14 +21,16 @@ const maxPerHouse = Number(arg('--max') || 120)
 const days = Number(arg('--days') || 365)
 const sb = createClient(process.env.NEXT_PUBLIC_SUPABASE_URL || 'http://missing', process.env.SUPABASE_SERVICE_ROLE_KEY || 'missing', { auth: { persistSession: false } })
 
-interface Site { listings: string[]; include: RegExp; exclude?: RegExp; region?: string }
+interface Site { listings: string[]; sitemaps?: string[]; include: RegExp; exclude?: RegExp; region?: string }
 const SITES: Record<string, Site> = {
   blackstone: {
     listings: ['https://www.blackstone.com/insights/', 'https://www.blackstone.com/insights/?type=article', 'https://www.blackstone.com/news/'],
+    sitemaps: ['https://www.blackstone.com/sitemap.xml', 'https://www.blackstone.com/sitemap_index.xml'],
     include: /^https:\/\/www\.blackstone\.com\/insights\/article\/[^/?#]+\/?$/,
   },
   kkr: {
     listings: ['https://www.kkr.com/insights', 'https://www.kkr.com/insights/all-insights'],
+    sitemaps: ['https://www.kkr.com/sitemap.xml', 'https://www.kkr.com/sitemap-index.xml'],
     include: /^https:\/\/www\.kkr\.com\/insights\/(?!all-insights|private-credit$|topics?\/)[a-z0-9-]+\/?$/,
   },
 }
@@ -80,6 +82,21 @@ async function collectLinks(page: Page, site: Site): Promise<string[]> {
       }
       console.log(`  listing ${url}: ${found.size} article links so far`)
     } catch (err: any) { console.log(`  listing ${url} failed: ${String(err?.message || err).slice(0, 120)}`) }
+  }
+  // The site's sitemaps, fetched through the browser (listing pages often show only the latest)
+  for (const sm of site.sitemaps || []) {
+    try {
+      const queue = [sm]; let fetched = 0
+      while (queue.length && fetched < 30) {
+        const res = await page.request.get(queue.shift()!, { timeout: 30000 }); fetched++
+        if (!res.ok()) continue
+        const xml = await res.text()
+        const locs = Array.from(xml.matchAll(/<loc>\s*([^<\s]+)\s*<\/loc>/g)).map(m => m[1].replace(/&amp;/g, '&'))
+        if (/<sitemapindex/i.test(xml)) queue.push(...locs.filter(l => /insight|article|post|page|default|sitemap/i.test(l)))
+        else for (const u of locs) { const v = u.split('#')[0].replace(/\/$/, ''); if (site.include.test(v) && !(site.exclude && site.exclude.test(v))) found.add(v) }
+      }
+      console.log(`  sitemap ${sm}: ${found.size} article links so far`)
+    } catch (err: any) { console.log(`  sitemap ${sm} failed: ${String(err?.message || err).slice(0, 120)}`) }
   }
   return Array.from(found)
 }
