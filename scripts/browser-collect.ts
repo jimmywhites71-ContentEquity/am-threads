@@ -15,7 +15,7 @@ import { pieceRow } from '../lib/piece-row'
 import { pieceKey } from '../lib/dedupe'
 
 const arg = (name: string) => { const i = process.argv.indexOf(name); return i > 0 ? process.argv[i + 1] : undefined }
-const managers = (arg('--managers') || 'blackstone,kkr').split(',').map(s => s.trim())
+const managers = (arg('--managers') || 'blackstone,kkr,oaktree,carlyle').split(',').map(s => s.trim())
 const probe = process.argv.includes('--probe')
 const maxPerHouse = Number(arg('--max') || 120)
 const days = Number(arg('--days') || 365)

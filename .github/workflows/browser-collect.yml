@@ -8,7 +8,7 @@ on:
     - cron: '17 7 * * *'
   workflow_dispatch:
     inputs:
-      managers: { description: 'House ids, comma separated', required: false, default: 'blackstone,kkr' }
+      managers: { description: 'House ids, comma separated', required: false, default: 'blackstone,kkr,oaktree,carlyle' }
       probe: { description: 'yes = only list what would be collected', required: false, default: 'no' }
       max: { description: 'Most new pieces per house', required: false, default: '120' }
 
@@ -34,7 +34,7 @@ jobs:
         run: |
           set -o pipefail
           P=""; [ "${{ github.event.inputs.probe }}" = "yes" ] && P="--probe"
-          npm run browser-collect -- --managers "${{ github.event.inputs.managers || 'blackstone,kkr' }}" --max "${{ github.event.inputs.max || '120' }}" $P 2>&1 | tee collect.log
+          npm run browser-collect -- --managers "${{ github.event.inputs.managers || 'blackstone,kkr,oaktree,carlyle' }}" --max "${{ github.event.inputs.max || '120' }}" $P 2>&1 | tee collect.log
       - name: File the result
         if: always()
         env:
