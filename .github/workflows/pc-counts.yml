@@ -1,0 +1,27 @@
+name: Private credit counts
+# Counts tagged pieces per house for chosen sub-asset classes and posts a comment on the status issue.
+on: workflow_dispatch
+permissions:
+  issues: write
+jobs:
+  count:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+    steps:
+      - run: |
+          out=""
+          for SUB in "Private Markets › Private credit" "Private Markets › Asset-based finance" "Fixed Income & Credit › Securitised & ABS" "Fixed Income & Credit › Leveraged loans"; do
+            Q=$(python3 -c "import urllib.parse,sys; print(urllib.parse.quote('{\"'+sys.argv[1]+'\"}'))" "$SUB")
+            all=""; off=0
+            while :; do
+              page=$(curl -sS "$URL/rest/v1/pieces?select=manager_id,published_at,kind,argument,shelf_life&sub_asset_classes=cs.$Q&taxonomy_version=eq.1.1.0&offset=$off&limit=1000" -H "apikey: $KEY" -H "Authorization: Bearer $KEY")
+              n=$(echo "$page" | jq 'length'); all=$(jq -s 'add' <(echo "${all:-[]}") <(echo "$page")); [ "$n" -lt 1000 ] && break; off=$((off+1000))
+            done
+            line=$(echo "$all" | jq -r --arg s "$SUB" '"### \($s): \(length) pieces, TL region \([.[]|select((.shelf_life//0)>=2 and (.argument//0)>=2)]|length)\n" + ([group_by(.manager_id)[] | {m: .[0].manager_id, n: length, tl: ([.[]|select((.shelf_life//0)>=2 and (.argument//0)>=2)]|length)}] | sort_by(-.n) | map("\(.m) \(.n) (TL \(.tl))") | join(" · "))')
+            out="$out"$'\n\n'"$line"
+          done
+          echo "$out"
+          gh api -X POST repos/$GITHUB_REPOSITORY/issues/2/comments -f body="Private credit counts (tagged 1.1.0 so far):$out" >/dev/null
