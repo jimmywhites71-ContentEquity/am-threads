@@ -176,27 +176,38 @@ async function main() {
   // Second pass: pages that build their text in the browser came back "thin" (under 150 words) to
   // the plain reader. Read them again once the browser has rendered them; if there is now real
   // text, store the new measures and clear the tags so the next pipeline run summarises and tags them.
-  const thinLimit = Number(process.env.THIN_LIMIT || 40)
-  const { data: thin } = await sb.from('pieces').select('id, url, manager_id').eq('status', 'thin').not('url', 'ilike', '%.pdf%').order('updated_at', { ascending: true }).limit(thinLimit)
+  // 18 Nov: faster. Four pages at a time, no wait for the network to go quiet (which often ran the
+  // full 30 s), the newest pieces first, and up to THIN_LIMIT a run (default 300).
+  const thinLimit = Number(process.env.THIN_LIMIT || 300)
+  const { data: thin } = await sb.from('pieces').select('id, url, manager_id').eq('status', 'thin').not('url', 'ilike', '%.pdf%')
+    .order('published_at', { ascending: false, nullsFirst: false }).order('updated_at', { ascending: true }).limit(thinLimit * 3)
+  // Pieces tried in the last 7 days go to the back, so each run reaches new ones
+  const weekAgo = Date.now() - 7 * 864e5
+  const { data: tried } = await sb.from('pieces').select('id, updated_at').eq('status', 'thin').gte('updated_at', new Date(weekAgo).toISOString()).limit(20000)
+  const recent = new Set((tried || []).map(t => t.id))
+  const queue = [...(thin || []).filter(p => !recent.has(p.id)), ...(thin || []).filter(p => recent.has(p.id))].slice(0, thinLimit)
   let rendered = 0, stillThin = 0
-  for (const p of thin || []) {
-    const page = await ctx.newPage()
-    try {
-      await page.goto(p.url, { waitUntil: 'networkidle', timeout: 30000 }).catch(() => page.waitForTimeout(3000))
-      await dismiss(page)
-      const extracted = extractFromHtml(await page.content(), p.url)
-      if (extracted.readability.word_count >= 150 && !extracted.gated) {
-        const row = pieceRow(p.manager_id, extracted)
-        await sb.from('pieces').update({ ...row, url: p.url, summary: null, taxonomy_version: null }).eq('id', p.id)
-        await sb.from('piece_text').upsert({ piece_id: p.id, text: extracted.text, disclaimer_text: extracted.disclaimer_text, pdf_links: extracted.pdf_links })
-        rendered++
-      } else {
-        // Touch it so the next run tries other thin pages first
-        await sb.from('pieces').update({ updated_at: new Date().toISOString() }).eq('id', p.id)
-        stillThin++
-      }
-    } catch { stillThin++ } finally { await page.close() }
+  const worker = async () => {
+    for (let p = queue.shift(); p; p = queue.shift()) {
+      const page = await ctx.newPage()
+      try {
+        await page.goto(p.url, { waitUntil: 'domcontentloaded', timeout: 30000 })
+        await page.waitForTimeout(2500); await dismiss(page)
+        let extracted = extractFromHtml(await page.content(), p.url)
+        if (extracted.readability.word_count < 150) { await page.mouse.wheel(0, 4000); await page.waitForTimeout(2000); extracted = extractFromHtml(await page.content(), p.url) }
+        if (extracted.readability.word_count >= 150 && !extracted.gated) {
+          const row = pieceRow(p.manager_id, extracted)
+          await sb.from('pieces').update({ ...row, url: p.url, summary: null, taxonomy_version: null }).eq('id', p.id)
+          await sb.from('piece_text').upsert({ piece_id: p.id, text: extracted.text, disclaimer_text: extracted.disclaimer_text, pdf_links: extracted.pdf_links })
+          rendered++
+        } else {
+          await sb.from('pieces').update({ updated_at: new Date().toISOString() }).eq('id', p.id)
+          stillThin++
+        }
+      } catch { stillThin++; await sb.from('pieces').update({ updated_at: new Date().toISOString() }).eq('id', p.id) } finally { await page.close() }
+    }
   }
+  await Promise.all([worker(), worker(), worker(), worker()])
   console.log(`Thin pages re-read in the browser: ${rendered} now readable, ${stillThin} still thin`)
 
   await browser.close()
