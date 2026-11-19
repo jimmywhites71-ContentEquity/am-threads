@@ -1,0 +1,36 @@
+name: Private credit export
+# Saves, as JSON on the judge-previews branch (exports/pc.json), the last year's pieces from the
+# private credit / asset-based finance competitor set, plus any piece from any house tagged to a
+# private or structured credit sub-class. For the AllianceBernstein GCO audit and white-space work.
+on:
+  workflow_dispatch:
+    inputs:
+      days: { description: 'Look back this many days', required: false, default: '365' }
+permissions:
+  contents: write
+jobs:
+  export:
+    runs-on: ubuntu-latest
+    env:
+      GH_TOKEN: ${{ github.token }}
+      URL: ${{ secrets.NEXT_PUBLIC_SUPABASE_URL }}
+      KEY: ${{ secrets.SUPABASE_SERVICE_ROLE_KEY }}
+    steps:
+      - run: |
+          SINCE=$(date -u -d "-${{ inputs.days || '365' }} days" +%Y-%m-%d)
+          HOUSES="alliancebernstein,ab-carval,ares,blackrock,jpmam,blackstone,apollo,pimco,aviva-investors,blue-owl,sixth-street,hps,oaktree,carlyle,brookfield,castlelake,fortress,bayview,varde,roundshield,schroders,neuberger,janus-henderson,axa-im,loim,bnppam,guggenheim,tpg,kkr,pgim,barings,insight,aberdeen"
+          SUBS=$(python3 -c "import urllib.parse; print(urllib.parse.quote('{\"Private Markets › Private credit\",\"Private Markets › Asset-based finance\",\"Fixed Income & Credit › Securitised & ABS\",\"Fixed Income & Credit › Leveraged loans\"}'))")
+          SEL="id,manager_id,title,url,published_at,word_count,format,status,summary,asset_classes,sub_asset_classes,primary_theme,secondary_themes,subject_regions,vehicles,content_purpose,explicit_call,kind,shelf_life,argument,series,taxonomy_version,regions,fk_grade,visual"
+          fetch() { local all="[]" off=0; while :; do
+              page=$(curl -sS "$URL/rest/v1/pieces?select=$SEL&$1&published_at=gte.$SINCE&order=published_at.desc&offset=$off&limit=1000" -H "apikey: $KEY" -H "Authorization: Bearer $KEY")
+              echo "$page" | jq -e 'type=="array"' >/dev/null || { echo "$page" | head -c 400; exit 1; }
+              all=$(jq -s 'add' <(echo "$all") <(echo "$page")); [ "$(echo "$page" | jq length)" -lt 1000 ] && break; off=$((off+1000)); done; echo "$all"; }
+          fetch "manager_id=in.($HOUSES)" > a.json
+          fetch "sub_asset_classes=ov.$SUBS" > b.json
+          jq -s '{exported_at: (now|todate), since: "'$SINCE'", pieces: (add | unique_by(.id))}' a.json b.json > pc.json
+          jq '.pieces|length' pc.json
+          gh api repos/$GITHUB_REPOSITORY/git/refs/heads/judge-previews >/dev/null 2>&1 || gh api repos/$GITHUB_REPOSITORY/git/refs -f ref=refs/heads/judge-previews -f sha=$GITHUB_SHA
+          SHA=$(gh api "repos/$GITHUB_REPOSITORY/contents/exports/pc.json?ref=judge-previews" --jq .sha 2>/dev/null || true)
+          base64 -w0 pc.json > b64.txt
+          if [ -n "$SHA" ]; then gh api -X PUT "repos/$GITHUB_REPOSITORY/contents/exports/pc.json" -f message=export -f branch=judge-previews -f sha="$SHA" -F content=@b64.txt >/dev/null
+          else gh api -X PUT "repos/$GITHUB_REPOSITORY/contents/exports/pc.json" -f message=export -f branch=judge-previews -F content=@b64.txt >/dev/null; fi
