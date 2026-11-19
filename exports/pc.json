@@ -1,5 +1,5 @@
 {
-  "exported_at": "2026-11-19T00:22:37Z",
+  "exported_at": "2026-11-19T01:29:55Z",
   "since": "2025-11-19",
   "pieces": [
     {
@@ -719,20 +719,29 @@
       "word_count": 3534,
       "format": "research paper",
       "status": "read",
-      "summary": null,
-      "asset_classes": [],
-      "sub_asset_classes": [],
-      "primary_theme": null,
-      "secondary_themes": [],
-      "subject_regions": [],
+      "summary": "Schroders argues that US retirement savings, held mainly in 401(k)s and IRAs, act as a large and steady source of equity demand, with about $980 billion of gross contributions in 2024 and an estimated $480 billion going into US equities. Its key risk is an AI-driven rise in unemployment among high earners, who disproportionately fund these monthly flows; the piece models unemployment reaching 10% in an AI-boom scenario and states that the resulting fall in contributions could be material for equities. Schroders supports this with the 2022 episode, where pension buying was the only meaningful bid for US stocks and may have cushioned a 20% fall, though it cautions that the figures are not a like-for-like decomposition of demand.",
+      "asset_classes": [
+        "Equities"
+      ],
+      "sub_asset_classes": [
+        "Equities › US"
+      ],
+      "primary_theme": "Labour Markets & Productivity",
+      "secondary_themes": [
+        "Pensions & Retirement",
+        "AI Adoption & Economics"
+      ],
+      "subject_regions": [
+        "US"
+      ],
       "vehicles": [],
-      "content_purpose": "market commentary",
+      "content_purpose": "thought leadership",
       "explicit_call": false,
-      "kind": "other",
-      "shelf_life": 0,
-      "argument": 0,
+      "kind": "essay",
+      "shelf_life": 2,
+      "argument": 3,
       "series": false,
-      "taxonomy_version": null,
+      "taxonomy_version": "1.1.0",
       "regions": [
         "UK"
       ],
@@ -20647,6 +20656,39 @@
       "visual": null
     },
     {
+      "id": "1eeefb28-0609-46ab-964b-f480d9fe383a",
+      "manager_id": "msim",
+      "title": "North America Private Credit: Strategy, Team, & Portfolio",
+      "url": "https://news.google.com/rss/articles/CBMixwFBVV95cUxQdDVaeFgzNzlXanBqYTlDR1ZLWEFBVEptbjkzTjk1R1B5V0NhSU03bGtjUGk3YVJiSEdvRl85SGZXQ3NKLUNNeDhXN3Z3NG1TbEZYN3JJTEpKVlNDem1xMm1RbWZGZjJOWnE5bTRNeXlBMC1qLU9wVzVEanBxdFdtUUtZUm1GaVdIbU05M0loRXdzdnNLWW9tYnNibzB5a0NoYzk1QUdwOWdUcW1mczRfM05qSTVCUTlGUTdoN3FEeDZhZmVTYjAw?oc=5",
+      "published_at": "2026-11-13T12:55:54+00:00",
+      "word_count": null,
+      "format": "article",
+      "status": "gated",
+      "summary": null,
+      "asset_classes": [
+        "Private Markets"
+      ],
+      "sub_asset_classes": [
+        "Private Markets › Private credit"
+      ],
+      "primary_theme": null,
+      "secondary_themes": [],
+      "subject_regions": [
+        "US"
+      ],
+      "vehicles": [],
+      "content_purpose": "product",
+      "explicit_call": false,
+      "kind": "other",
+      "shelf_life": 2,
+      "argument": 0,
+      "series": false,
+      "taxonomy_version": "1.1.0",
+      "regions": [],
+      "fk_grade": null,
+      "visual": null
+    },
+    {
       "id": "1f12502b-c40a-4c39-b48f-e684a2ad15a7",
       "manager_id": "aberdeen",
       "title": "Dunedin Income Growth Investment Trust: Kepler research note",
@@ -21008,10 +21050,10 @@
       "content_purpose": "thought leadership",
       "explicit_call": false,
       "kind": "qa",
-      "shelf_life": 1,
+      "shelf_life": 2,
       "argument": 1,
       "series": true,
-      "taxonomy_version": null,
+      "taxonomy_version": "1.1.0",
       "regions": [
         "Global"
       ],
@@ -28098,6 +28140,52 @@
         "interactive": false,
         "video_embed": false,
         "images_per_1000_words": 0
+      }
+    },
+    {
+      "id": "29af7580-9e09-4956-924c-2436b33abe0c",
+      "manager_id": "troweprice",
+      "title": "Where private capital has an edge",
+      "url": "https://www.troweprice.com/financial-intermediary/lu/en/thinking/articles/2026/q4/where-private-capital-has-an-edge.html",
+      "published_at": "2026-11-13T00:00:00+00:00",
+      "word_count": 0,
+      "format": "article",
+      "status": "thin",
+      "summary": null,
+      "asset_classes": [
+        "Private Markets"
+      ],
+      "sub_asset_classes": [
+        "Private Markets › Private credit"
+      ],
+      "primary_theme": "Hedge Funds & Alternatives",
+      "secondary_themes": [
+        "AI Build-out & Financing"
+      ],
+      "subject_regions": [],
+      "vehicles": [],
+      "content_purpose": "house view",
+      "explicit_call": false,
+      "kind": "periodic",
+      "shelf_life": 2,
+      "argument": 2,
+      "series": true,
+      "taxonomy_version": "1.1.0",
+      "regions": [
+        "Global",
+        "Switzerland",
+        "Germany & Austria"
+      ],
+      "fk_grade": null,
+      "visual": {
+        "charts": 0,
+        "images": 0,
+        "lead_image": false,
+        "audio_embed": false,
+        "chart_hosts": [],
+        "interactive": false,
+        "video_embed": false,
+        "images_per_1000_words": null
       }
     },
     {
@@ -36251,6 +36339,50 @@
       }
     },
     {
+      "id": "361e3d91-6726-4b4a-912a-68e9533cf166",
+      "manager_id": "invesco",
+      "title": "The Case for Senior Loans: Q3 2026",
+      "url": "https://www.invesco.com/au/en/insights/senior-secured-loans/senior-loans-quarterly-report-q3-2026.html",
+      "published_at": "2026-11-18T00:00:00+00:00",
+      "word_count": 228,
+      "format": "article",
+      "status": "read",
+      "summary": "Invesco describes the bank loan market as constructive amid a Q3 2026 backdrop of Federal Reserve and ECB rate rises, Middle East tensions lifting oil prices, and a recovery in technology credits after earlier AI-driven volatility. The firm argues that loans, as a floating-rate asset class, can benef",
+      "asset_classes": [
+        "Fixed Income & Credit"
+      ],
+      "sub_asset_classes": [
+        "Fixed Income & Credit › Leveraged loans"
+      ],
+      "primary_theme": "Monetary Policy",
+      "secondary_themes": [
+        "Credit Conditions & Defaults"
+      ],
+      "subject_regions": [],
+      "vehicles": [],
+      "content_purpose": "house view",
+      "explicit_call": true,
+      "kind": "periodic",
+      "shelf_life": 1,
+      "argument": 2,
+      "series": true,
+      "taxonomy_version": "1.1.0",
+      "regions": [
+        "APAC"
+      ],
+      "fk_grade": 12,
+      "visual": {
+        "charts": 0,
+        "images": 1,
+        "lead_image": true,
+        "audio_embed": false,
+        "chart_hosts": [],
+        "interactive": false,
+        "video_embed": false,
+        "images_per_1000_words": 4.4
+      }
+    },
+    {
       "id": "362debd6-66bf-4631-afa7-dd0b0aae3d2f",
       "manager_id": "janus-henderson",
       "title": "What most ELN investors aren't pricing in",
@@ -37477,6 +37609,39 @@
         "video_embed": false,
         "images_per_1000_words": 2.6
       }
+    },
+    {
+      "id": "37e61c7a-43df-4432-b51e-83b715364e1d",
+      "manager_id": "neuberger",
+      "title": "Neuberger EMD Corporate – Social and Environmental Transition Fund",
+      "url": "https://news.google.com/rss/articles/CBMiiAFBVV95cUxPNW1FYmJYV21WM0lqNVZfeFZvNXJHemt2bmpnUnhHUmtmeGIyUHZNUjE2eTFiOHBUZ3FnaFdtYTBWT1JKSlJHWWh0WGpIQkd5U1J1eHBobzlKdldHVW40XzhIeU52QVIxdnI5b0hpQVNGN1pKemdjc2NkUHVmcFJwMGlIZ0xEdkdQ?oc=5",
+      "published_at": "2026-10-22T07:00:00+00:00",
+      "word_count": null,
+      "format": "article",
+      "status": "gated",
+      "summary": null,
+      "asset_classes": [
+        "Fixed Income & Credit"
+      ],
+      "sub_asset_classes": [
+        "Fixed Income & Credit › EM debt"
+      ],
+      "primary_theme": "Green & Transition Finance",
+      "secondary_themes": [],
+      "subject_regions": [
+        "Emerging Markets"
+      ],
+      "vehicles": [],
+      "content_purpose": "product",
+      "explicit_call": false,
+      "kind": "other",
+      "shelf_life": 1,
+      "argument": 0,
+      "series": false,
+      "taxonomy_version": "1.1.0",
+      "regions": [],
+      "fk_grade": null,
+      "visual": null
     },
     {
       "id": "37ed79bf-74b9-45d4-9c47-23e9bb4601b8",
@@ -44653,6 +44818,52 @@
       }
     },
     {
+      "id": "4258576d-5bb6-4be6-9149-42b257a70da5",
+      "manager_id": "blackrock",
+      "title": "AI’s big questions",
+      "url": "https://www.blackrock.com/corporate/insights/blackrock-investment-institute/publications/investment-perspective/november-21-2024",
+      "published_at": "2026-10-14T00:00:00+00:00",
+      "word_count": 537,
+      "format": "article",
+      "status": "read",
+      "summary": "BlackRock outlines a three-phase framework for tracking AI's economic impact: infrastructure buildout, adoption across sectors, and widespread transformation. The firm estimates annual investment in data centres and AI chips could exceed $700 billion by 2030, equivalent to over 2 per cent of US GDP, and sees significant near-term investment opportunities in foundational technology layers, utilities, energy and real estate, whilst cautioning that value creation may not accrue to the sectors adopting AI most heavily.",
+      "asset_classes": [
+        "Equities"
+      ],
+      "sub_asset_classes": [
+        "Equities › Sector & thematic"
+      ],
+      "primary_theme": "AI Build-out & Financing",
+      "secondary_themes": [
+        "AI Adoption & Economics"
+      ],
+      "subject_regions": [
+        "US"
+      ],
+      "vehicles": [],
+      "content_purpose": "thought leadership",
+      "explicit_call": true,
+      "kind": "essay",
+      "shelf_life": 2,
+      "argument": 2,
+      "series": false,
+      "taxonomy_version": "1.1.0",
+      "regions": [
+        "Global"
+      ],
+      "fk_grade": 10.6,
+      "visual": {
+        "charts": 2,
+        "images": 9,
+        "lead_image": true,
+        "audio_embed": false,
+        "chart_hosts": [],
+        "interactive": true,
+        "video_embed": false,
+        "images_per_1000_words": 16.8
+      }
+    },
+    {
       "id": "42602d60-eb50-41eb-990c-edca7ec8686e",
       "manager_id": "hps",
       "title": "Private Credit Principles Remain the Same But Results Vary across Investment Approach",
@@ -46799,19 +47010,23 @@
       "format": "article",
       "status": "read",
       "summary": null,
-      "asset_classes": [],
-      "sub_asset_classes": [],
-      "primary_theme": null,
+      "asset_classes": [
+        "Private Markets"
+      ],
+      "sub_asset_classes": [
+        "Private Markets › Asset-based finance"
+      ],
+      "primary_theme": "Portfolio Construction & Diversification",
       "secondary_themes": [],
       "subject_regions": [],
       "vehicles": [],
-      "content_purpose": null,
-      "explicit_call": null,
-      "kind": null,
-      "shelf_life": null,
-      "argument": null,
-      "series": null,
-      "taxonomy_version": null,
+      "content_purpose": "thought leadership",
+      "explicit_call": false,
+      "kind": "qa",
+      "shelf_life": 2,
+      "argument": 2,
+      "series": false,
+      "taxonomy_version": "1.1.0",
       "regions": [
         "UK",
         "US"
@@ -49374,6 +49589,51 @@
         "interactive": false,
         "video_embed": false,
         "images_per_1000_words": null
+      }
+    },
+    {
+      "id": "49ef9daf-9de4-41ee-b17e-9b38afa326de",
+      "manager_id": "gemcorp",
+      "title": "Commodity Watch: Lending Through the Ages",
+      "url": "https://gemcorpcapital.com/insight/commodity-watch-lending-through-the-ages",
+      "published_at": "2026-07-13T00:00:00+00:00",
+      "word_count": 1232,
+      "format": "article",
+      "status": "read",
+      "summary": "Gemcorp Capital argues that, despite the recent strain on private credit (direct loans to private equity, with heavy software exposure) from investor redemptions and AI-driven capital demands, asset-based finance (ABF) is a growing and attractive corner of private markets, with the private ABF market projected to reach US$9 trillion by 2029 from US$6 trillion today. It makes an explicit case for ABF's diversification, low correlation, self-liquidating structures and hard-asset security, while cautioning that its subcategories require specialist underwriting, that diversification and close proximity to collateral matter, and that risks are real. The piece offers its SHIELD framework (short-duration credit, hard-asset collateral, differentiated income, enduring demand, adequate loan-to-value and secured debt) as a lens for assessing any ABF strategy.",
+      "asset_classes": [
+        "Private Markets"
+      ],
+      "sub_asset_classes": [
+        "Private Markets › Asset-based finance",
+        "Private Markets › Private credit"
+      ],
+      "primary_theme": "Credit Conditions & Defaults",
+      "secondary_themes": [
+        "Hedge Funds & Alternatives"
+      ],
+      "subject_regions": [],
+      "vehicles": [],
+      "content_purpose": "thought leadership",
+      "explicit_call": true,
+      "kind": "periodic",
+      "shelf_life": 2,
+      "argument": 3,
+      "series": true,
+      "taxonomy_version": "1.1.0",
+      "regions": [
+        "Global"
+      ],
+      "fk_grade": 13.2,
+      "visual": {
+        "charts": 0,
+        "images": 5,
+        "lead_image": true,
+        "audio_embed": false,
+        "chart_hosts": [],
+        "interactive": false,
+        "video_embed": false,
+        "images_per_1000_words": 4.1
       }
     },
     {
@@ -55927,7 +56187,7 @@
       "shelf_life": 2,
       "argument": 1,
       "series": true,
-      "taxonomy_version": null,
+      "taxonomy_version": "1.1.0",
       "regions": [
         "Global"
       ],
@@ -61517,6 +61777,39 @@
       }
     },
     {
+      "id": "5b4de116-832f-46d3-bc49-9ad429641082",
+      "manager_id": "aviva-investors",
+      "title": "Aviva Investors launches Emerging Market Debt Opportunities Fund",
+      "url": "https://news.google.com/rss/articles/CBMiwgFBVV95cUxQM1Z3VUpPbWxrTkhDMDJqYVozd1RBekpKVTVyelhfMU1mX1hhdDNCbEFhZlpQejVsTGF3cWVVcDhtU3dWYTR4ZjloOUdRQmFBNmNoWFhoRExzd0dEVUdlQUhPeTZ0bURpd0J3aXJsOXVCLXhZS2ZOVDN6eU9WMGpjRWJuanhFYnhTMzBuMER1RmhHN2xYekY2U3MydV8tNEIxdzVKWU0wSngtY2NEZHRFUHRlamVyYVkyWlpVZnZIYWVIZw?oc=5",
+      "published_at": "2026-11-18T16:16:48+00:00",
+      "word_count": null,
+      "format": "article",
+      "status": "gated",
+      "summary": null,
+      "asset_classes": [
+        "Fixed Income & Credit"
+      ],
+      "sub_asset_classes": [
+        "Fixed Income & Credit › EM debt"
+      ],
+      "primary_theme": null,
+      "secondary_themes": [],
+      "subject_regions": [
+        "Emerging Markets"
+      ],
+      "vehicles": [],
+      "content_purpose": "product",
+      "explicit_call": false,
+      "kind": "other",
+      "shelf_life": 1,
+      "argument": 0,
+      "series": false,
+      "taxonomy_version": "1.1.0",
+      "regions": [],
+      "fk_grade": null,
+      "visual": null
+    },
+    {
       "id": "5b9283e5-46aa-4733-9dee-c4f884945731",
       "manager_id": "blackrock",
       "title": "Building America: investing in infrastructure and the workforce",
@@ -64151,6 +64444,53 @@
         "interactive": false,
         "video_embed": false,
         "images_per_1000_words": 2.5
+      }
+    },
+    {
+      "id": "5ed4d5e6-5fd6-48f9-b36d-7371296d69ac",
+      "manager_id": "nyli",
+      "title": "Stress at the edge: CoreWeave and the AI financing model",
+      "url": "https://www.nylim.com/mackay-shields/insights/stress-at-the-edge",
+      "published_at": "2026-11-18T09:52:27.479+00:00",
+      "word_count": 8050,
+      "format": "research paper",
+      "status": "read",
+      "summary": "New York Life Investments argues that the sell-off in CoreWeave's debt reflects doubts about its financing, not AI demand: its unsecured notes yield about 15%, while loans secured on specific customer contracts still trade near par. The firm warns that leveraged \"edge\" borrowers such as neoclouds are the weak link, since funding stress there has historically cut capex and spread to the core,",
+      "asset_classes": [
+        "Fixed Income & Credit"
+      ],
+      "sub_asset_classes": [
+        "Fixed Income & Credit › High yield",
+        "Fixed Income & Credit › Leveraged loans"
+      ],
+      "primary_theme": "AI Build-out & Financing",
+      "secondary_themes": [
+        "Credit Conditions & Defaults"
+      ],
+      "subject_regions": [
+        "US"
+      ],
+      "vehicles": [],
+      "content_purpose": "market commentary",
+      "explicit_call": false,
+      "kind": "essay",
+      "shelf_life": 1,
+      "argument": 2,
+      "series": false,
+      "taxonomy_version": "1.1.0",
+      "regions": [
+        "Global"
+      ],
+      "fk_grade": 10.7,
+      "visual": {
+        "charts": 0,
+        "images": 10,
+        "lead_image": true,
+        "audio_embed": false,
+        "chart_hosts": [],
+        "interactive": false,
+        "video_embed": false,
+        "images_per_1000_words": 1.2
       }
     },
     {
@@ -68744,6 +69084,50 @@
       }
     },
     {
+      "id": "649eda43-9bf1-4d8e-99f9-ee8c71e5c492",
+      "manager_id": "hps",
+      "title": "Evaluating AI-Related Opportunities in Private Credit",
+      "url": "https://www.hpspartners.com/insights-and-news/evaluating-ai-related-opportunities-in-private-credit",
+      "published_at": "2026-11-18T16:56:18+00:00",
+      "word_count": 54,
+      "format": "video",
+      "status": "thin",
+      "summary": null,
+      "asset_classes": [
+        "Private Markets"
+      ],
+      "sub_asset_classes": [
+        "Private Markets › Private credit"
+      ],
+      "primary_theme": "AI Build-out & Financing",
+      "secondary_themes": [
+        "Portfolio Construction & Diversification"
+      ],
+      "subject_regions": [],
+      "vehicles": [],
+      "content_purpose": "thought leadership",
+      "explicit_call": false,
+      "kind": "qa",
+      "shelf_life": 2,
+      "argument": 1,
+      "series": false,
+      "taxonomy_version": "1.1.0",
+      "regions": [
+        "Global"
+      ],
+      "fk_grade": 14.1,
+      "visual": {
+        "charts": 0,
+        "images": 2,
+        "lead_image": true,
+        "audio_embed": false,
+        "chart_hosts": [],
+        "interactive": false,
+        "video_embed": true,
+        "images_per_1000_words": 37
+      }
+    },
+    {
       "id": "64a44b1d-77a4-4bd6-8a7e-0bd9b82f6bb6",
       "manager_id": "insight",
       "title": "Insight’s 2026 Retirement Income DC Member Survey",
@@ -69068,51 +69452,6 @@
         "interactive": false,
         "video_embed": false,
         "images_per_1000_words": 5.6
-      }
-    },
-    {
-      "id": "654d5604-ed96-486f-9bd2-5366dd76d15b",
-      "manager_id": "blackrock",
-      "title": "February 2021",
-      "url": "https://www.blackrock.com/corporate/insights/blackrock-investment-institute/publications/global-macro-outlook/february-2021",
-      "published_at": "2026-10-14T00:00:00+00:00",
-      "word_count": 1327,
-      "format": "outlook",
-      "status": "read",
-      "summary": "BlackRock argues that current low interest rates and asset valuations depend on an increasingly fragile assumption that this regime will persist, despite unprecedented peacetime sovereign debt accumulation following Covid-19 fiscal support that far exceeds the economic shock. The firm identifies a critical risk: if long-term yields rise above growth rates, the intellectual consensus justifying large deficits would collapse, as governments could no longer stabilise debt-to-GDP ratios, yet investors have recently foregone traditional risk compensation on government bonds despite their increased riskiness. BlackRock does not make an explicit tactical call but implies that this debt tolerance warrants close monitoring as a key determinant of future asset allocation outcomes.",
-      "asset_classes": [
-        "Fixed Income & Credit"
-      ],
-      "sub_asset_classes": [
-        "Fixed Income & Credit › Government & rates"
-      ],
-      "primary_theme": "Fiscal Policy & Sovereign Debt",
-      "secondary_themes": [
-        "Monetary Policy",
-        "Valuations & Market Concentration"
-      ],
-      "subject_regions": [],
-      "vehicles": [],
-      "content_purpose": "house view",
-      "explicit_call": false,
-      "kind": "periodic",
-      "shelf_life": 2,
-      "argument": 3,
-      "series": false,
-      "taxonomy_version": "1.1.0",
-      "regions": [
-        "Global"
-      ],
-      "fk_grade": 10.5,
-      "visual": {
-        "charts": 2,
-        "images": 8,
-        "lead_image": true,
-        "audio_embed": false,
-        "chart_hosts": [],
-        "interactive": false,
-        "video_embed": false,
-        "images_per_1000_words": 6
       }
     },
     {
@@ -76727,46 +77066,6 @@
       }
     },
     {
-      "id": "70849d80-520c-4e80-aef0-6f5b33e6522a",
-      "manager_id": "blackrock",
-      "title": "BlackRock in Europe",
-      "url": "https://www.blackrock.com/corporate/insights/thought-leadership/public-policy/blackrock-in-europe",
-      "published_at": "2026-10-14T00:00:00+00:00",
-      "word_count": 350,
-      "format": "article",
-      "status": "read",
-      "summary": "BlackRock reports that it manages over €1.8 trillion invested in Europe's economy across 7,000 employees in 20+ cities, positioning itself as a major employer and investor in European markets and infrastructure. The piece emphasises BlackRock's commitment to supporting European economic growth through client investments, innovation partnerships, and community initiatives including youth mentorship via The King's Trust and engagement with EU policy developments.",
-      "asset_classes": [],
-      "sub_asset_classes": [],
-      "primary_theme": "Asset Management Industry",
-      "secondary_themes": [],
-      "subject_regions": [
-        "Europe"
-      ],
-      "vehicles": [],
-      "content_purpose": "product",
-      "explicit_call": false,
-      "kind": "other",
-      "shelf_life": 2,
-      "argument": 0,
-      "series": false,
-      "taxonomy_version": "1.1.0",
-      "regions": [
-        "Global"
-      ],
-      "fk_grade": 8.8,
-      "visual": {
-        "charts": 0,
-        "images": 5,
-        "lead_image": true,
-        "audio_embed": false,
-        "chart_hosts": [],
-        "interactive": false,
-        "video_embed": false,
-        "images_per_1000_words": 14.3
-      }
-    },
-    {
       "id": "7086b957-1359-4ac5-8039-ef480abd0ff8",
       "manager_id": "voya-im",
       "title": "Senior Loan Talking Points",
@@ -77055,6 +77354,50 @@
         "interactive": false,
         "video_embed": false,
         "images_per_1000_words": 58.8
+      }
+    },
+    {
+      "id": "71004a19-1220-4dd6-bb33-88dcb3cbf5fc",
+      "manager_id": "aberdeen",
+      "title": "Aberdeen Equity Income Trust Research Note",
+      "url": "https://www.aberdeeninvestments.com/en-gb/trusts/insights/aberdeen-equity-income-research-note",
+      "published_at": "2026-11-17T14:18:00+00:00",
+      "word_count": 97,
+      "format": "article",
+      "status": "thin",
+      "summary": null,
+      "asset_classes": [
+        "Equities"
+      ],
+      "sub_asset_classes": [
+        "Equities › UK"
+      ],
+      "primary_theme": "Income & Dividends",
+      "secondary_themes": [],
+      "subject_regions": [
+        "UK"
+      ],
+      "vehicles": [],
+      "content_purpose": "product",
+      "explicit_call": false,
+      "kind": "other",
+      "shelf_life": 1,
+      "argument": 0,
+      "series": true,
+      "taxonomy_version": "1.1.0",
+      "regions": [
+        "UK"
+      ],
+      "fk_grade": 9.3,
+      "visual": {
+        "charts": 0,
+        "images": 1,
+        "lead_image": true,
+        "audio_embed": false,
+        "chart_hosts": [],
+        "interactive": false,
+        "video_embed": false,
+        "images_per_1000_words": 10.3
       }
     },
     {
@@ -81318,22 +81661,32 @@
       "word_count": 1163,
       "format": "article",
       "status": "read",
-      "summary": null,
-      "asset_classes": [],
-      "sub_asset_classes": [],
-      "primary_theme": null,
-      "secondary_themes": [],
-      "subject_regions": [],
+      "summary": "Janus Henderson Investors' Richard Clode argues that Nvidia's first results after Jensen Huang's departure show AI demand remains robust, with the company raising its 2027 revenue growth guidance from 70% to 75% and saying demand still outstrips supply, while the investment debate is shifting to whether AI capital expenditure holds up in 2028. The piece views the results as an \"outsized\" beat and raise that the shares' already depressed valuation does not fully reflect, though it flags leadership transition, regulation, financing risks and supply commitments (now US$390bn) as considerations investors must weigh.",
+      "asset_classes": [
+        "Equities"
+      ],
+      "sub_asset_classes": [
+        "Equities › Sector & thematic"
+      ],
+      "primary_theme": "AI Adoption & Economics",
+      "secondary_themes": [
+        "AI Build-out & Financing",
+        "Earnings & Corporate Fundamentals"
+      ],
+      "subject_regions": [
+        "US"
+      ],
       "vehicles": [],
-      "content_purpose": null,
-      "explicit_call": null,
-      "kind": null,
-      "shelf_life": null,
-      "argument": null,
-      "series": null,
-      "taxonomy_version": null,
+      "content_purpose": "market commentary",
+      "explicit_call": false,
+      "kind": "essay",
+      "shelf_life": 0,
+      "argument": 2,
+      "series": true,
+      "taxonomy_version": "1.1.0",
       "regions": [
-        "UK"
+        "UK",
+        "US"
       ],
       "fk_grade": 15.1,
       "visual": {
@@ -82894,6 +83247,53 @@
         "interactive": false,
         "video_embed": false,
         "images_per_1000_words": null
+      }
+    },
+    {
+      "id": "79e690dd-cced-44e8-a727-f4b7ab766ec8",
+      "manager_id": "invesco",
+      "title": "2026 Insurance Midyear Investment Outlook - AP Institutional",
+      "url": "https://www.invesco.com/apac/en/institutional/insights/multi-asset/insurance-investment-outlook.html",
+      "published_at": "2026-06-24T00:00:00+00:00",
+      "word_count": 2108,
+      "format": "outlook",
+      "status": "read",
+      "summary": "Invesco's midyear 2026 insurance outlook argues that risk assets have held up despite the Iran war and private credit worries over AI-driven software exposure, with yield curves and credit spreads signalling no near-term recession, but that very tight spread compensation and inflation risk warrant caution. Invesco explicitly advises insurers to be wary of spread duration, since spread risk is skewed to the upside, and to diversify away from crowded public markets. It recommends selective allocations to private credit and real asset debt as a source of more resilient income, differentiated return drivers and better capital efficiency.",
+      "asset_classes": [
+        "Multi-Asset",
+        "Private Markets"
+      ],
+      "sub_asset_classes": [
+        "Multi-Asset › Outlooks & house views",
+        "Private Markets › Private credit"
+      ],
+      "primary_theme": "Credit Conditions & Defaults",
+      "secondary_themes": [
+        "Portfolio Construction & Diversification",
+        "Inflation"
+      ],
+      "subject_regions": [],
+      "vehicles": [],
+      "content_purpose": "house view",
+      "explicit_call": true,
+      "kind": "periodic",
+      "shelf_life": 1,
+      "argument": 2,
+      "series": true,
+      "taxonomy_version": "1.1.0",
+      "regions": [
+        "Global"
+      ],
+      "fk_grade": 15.9,
+      "visual": {
+        "charts": 6,
+        "images": 13,
+        "lead_image": true,
+        "audio_embed": false,
+        "chart_hosts": [],
+        "interactive": false,
+        "video_embed": false,
+        "images_per_1000_words": 6.2
       }
     },
     {
@@ -87509,54 +87909,6 @@
         "interactive": false,
         "video_embed": true,
         "images_per_1000_words": 0.8
-      }
-    },
-    {
-      "id": "808e97e0-4435-468c-8acd-c8949f0e7c03",
-      "manager_id": "blackrock",
-      "title": "Investment Perspective August 2024",
-      "url": "https://www.blackrock.com/corporate/insights/blackrock-investment-institute/publications/investment-perspective-august-2024",
-      "published_at": "2026-10-14T00:00:00+00:00",
-      "word_count": 543,
-      "format": "article",
-      "status": "read",
-      "summary": "BlackRock argues that natural capital—the total economic value of natural resources—is currently underpriced in markets but will see asset repricing as physical risks from resource strain and biodiversity loss increase costs for companies, whilst policy responses and technological advances also reshape valuations. The firm identifies investment opportunities in efficiency improvements, circular economy solutions, nature restoration and synthetic biology, and upgrades its recommendation on U.S. Treasuries to lock in higher yields whilst maintaining conviction in artificial intelligence exposure.",
-      "asset_classes": [
-        "Fixed Income & Credit",
-        "Commodities & Real Assets"
-      ],
-      "sub_asset_classes": [
-        "Fixed Income & Credit › Government & rates",
-        "Commodities & Real Assets › Natural resources"
-      ],
-      "primary_theme": "Nature & Social",
-      "secondary_themes": [
-        "AI Adoption & Economics"
-      ],
-      "subject_regions": [
-        "US"
-      ],
-      "vehicles": [],
-      "content_purpose": "house view",
-      "explicit_call": true,
-      "kind": "periodic",
-      "shelf_life": 1,
-      "argument": 2,
-      "series": true,
-      "taxonomy_version": "1.1.0",
-      "regions": [
-        "Global"
-      ],
-      "fk_grade": 12.1,
-      "visual": {
-        "charts": 2,
-        "images": 14,
-        "lead_image": true,
-        "audio_embed": false,
-        "chart_hosts": [],
-        "interactive": true,
-        "video_embed": false,
-        "images_per_1000_words": 25.8
       }
     },
     {
@@ -102075,6 +102427,52 @@
       }
     },
     {
+      "id": "958fd345-3981-44b9-80b4-5a98ca7216ce",
+      "manager_id": "troweprice",
+      "title": "Where private capital has an edge",
+      "url": "https://www.troweprice.com/financial-intermediary/us/en/insights/articles/2026/q4/where-private-capital-has-an-edge-twenty-twenty-seven-global-market-outlook.html",
+      "published_at": "2026-11-13T00:00:00+00:00",
+      "word_count": 851,
+      "format": "outlook",
+      "status": "read",
+      "summary": "T. Rowe Price argues that AI infrastructure, reshoring and other capital-intensive trends are driving demand for specialised private financing, and that rising financing costs and technological disruption are widening return dispersion across private credit, private equity and infrastructure. It contends that private markets are shifting from gaining access towards precise",
+      "asset_classes": [
+        "Private Markets"
+      ],
+      "sub_asset_classes": [
+        "Private Markets › Private credit",
+        "Private Markets › Infrastructure"
+      ],
+      "primary_theme": "Hedge Funds & Alternatives",
+      "secondary_themes": [
+        "AI Build-out & Financing",
+        "Reshoring & Industrial Policy"
+      ],
+      "subject_regions": [],
+      "vehicles": [],
+      "content_purpose": "house view",
+      "explicit_call": true,
+      "kind": "periodic",
+      "shelf_life": 2,
+      "argument": 2,
+      "series": true,
+      "taxonomy_version": "1.1.0",
+      "regions": [
+        "US"
+      ],
+      "fk_grade": 13,
+      "visual": {
+        "charts": 0,
+        "images": 6,
+        "lead_image": false,
+        "audio_embed": false,
+        "chart_hosts": [],
+        "interactive": false,
+        "video_embed": false,
+        "images_per_1000_words": 7.1
+      }
+    },
+    {
       "id": "9594b2a1-4120-463e-bb0d-1e1f3fed2252",
       "manager_id": "apollo",
       "title": "When Duration Stops Working: How the Rate Cycle Has Rewritten the Fixed Income Playbook",
@@ -109139,6 +109537,53 @@
       }
     },
     {
+      "id": "9ed73148-7bc0-479a-b138-bfd97fe8cc9b",
+      "manager_id": "pgim",
+      "title": "Tailoring Insurance Investments: Yield Enhancement Strategies to Optimize Capital-Constrained Insurance Portfolios",
+      "url": "https://www.pgim.com/hk/en/institutional/insights/asset-class/multi-asset/multi-asset-solutions/tailoring-insurance-investments-yield-enhancement-strategies-to-optimize-capital-constrained-insurance-portfolios",
+      "published_at": "2026-11-18T15:18:46.051+00:00",
+      "word_count": 327,
+      "format": "article",
+      "status": "read",
+      "summary": null,
+      "asset_classes": [
+        "Fixed Income & Credit",
+        "Multi-Asset"
+      ],
+      "sub_asset_classes": [],
+      "primary_theme": "Portfolio Construction & Diversification",
+      "secondary_themes": [],
+      "subject_regions": [],
+      "vehicles": [],
+      "content_purpose": "thought leadership",
+      "explicit_call": false,
+      "kind": "essay",
+      "shelf_life": 2,
+      "argument": 1,
+      "series": false,
+      "taxonomy_version": "1.1.0",
+      "regions": [
+        "APAC",
+        "Global",
+        "UK",
+        "Canada",
+        "US",
+        "Switzerland",
+        "Germany & Austria"
+      ],
+      "fk_grade": 17.4,
+      "visual": {
+        "charts": 0,
+        "images": 1,
+        "lead_image": true,
+        "audio_embed": false,
+        "chart_hosts": [],
+        "interactive": false,
+        "video_embed": false,
+        "images_per_1000_words": 3.1
+      }
+    },
+    {
       "id": "9ee0cb68-cabd-45aa-9652-13ff21e5cbd9",
       "manager_id": "blackrock",
       "title": "Family Office Investment Solutions",
@@ -111558,6 +112003,52 @@
         "interactive": false,
         "video_embed": true,
         "images_per_1000_words": 2.5
+      }
+    },
+    {
+      "id": "a2fb9e25-98a0-47e9-83ef-c933e938a4d1",
+      "manager_id": "alliancebernstein",
+      "title": "Have Rate Hikes Tipped the Scales Toward Value Equities?",
+      "url": "https://www.alliancebernstein.com/us/en-us/defined-contribution/insights/portfolio-perspectives/have-rate-hikes-tipped-the-scales-toward-value-equities.html",
+      "published_at": "2026-10-14T00:00:00+00:00",
+      "word_count": 811,
+      "format": "article",
+      "status": "read",
+      "summary": "AllianceBernstein argues that rising interest rates and persistent inflation could favour value equities over long-duration growth stocks, since value companies derive more of their worth from visible cash flows over the next three to five years, whereas growth valuations depend more on distant profits that are discounted more heavily when rates rise. The firm cites its research showing value stocks outperforming growth three, six and 12 months after rate-hike cycles began, and says the AI-driven market and concentration in growth stocks make value a useful diversifier. Its explicit view is that portfolios heavily tilted toward growth during the low-rate era may benefit from selective exposure to value stocks with visible free cash flow and credible normalised earnings, while growth still has a place in diversified allocations.",
+      "asset_classes": [
+        "Equities"
+      ],
+      "sub_asset_classes": [
+        "Equities › Style"
+      ],
+      "primary_theme": "Value",
+      "secondary_themes": [
+        "Monetary Policy",
+        "Valuations & Market Concentration"
+      ],
+      "subject_regions": [],
+      "vehicles": [],
+      "content_purpose": "thought leadership",
+      "explicit_call": true,
+      "kind": "essay",
+      "shelf_life": 1,
+      "argument": 2,
+      "series": false,
+      "taxonomy_version": "1.1.0",
+      "regions": [
+        "US",
+        "UK"
+      ],
+      "fk_grade": 12.4,
+      "visual": {
+        "charts": 0,
+        "images": 0,
+        "lead_image": true,
+        "audio_embed": false,
+        "chart_hosts": [],
+        "interactive": false,
+        "video_embed": false,
+        "images_per_1000_words": 0
       }
     },
     {
@@ -116001,6 +116492,54 @@
         "interactive": false,
         "video_embed": false,
         "images_per_1000_words": 1.6
+      }
+    },
+    {
+      "id": "aa6386ea-d445-4aa6-a4fb-5221668fceac",
+      "manager_id": "federated-hermes",
+      "title": "Federated Hermes | Why our improved credit outlook explains tight spread levels",
+      "url": "https://www.federatedhermes.com/en-ky/insights/why-our-improved-credit-outlook-explains-tight-spread-levels",
+      "published_at": "2025-12-16T00:00:00+00:00",
+      "word_count": 1342,
+      "format": "outlook",
+      "status": "read",
+      "summary": "Federated Hermes argues that its confidence in moderate, credit-friendly global growth has improved, leading it to modestly upgrade its overall appetite for credit risk, with the reduced use of \"uncertainty\" in the Fed's Beige Book cited as supporting evidence. Its main stated concern is valuation: even after adjusting for duration and quality, spreads remain on the rich side of fair. Accordingly, it says it remains fully invested at the higher end of credit quality, avoids weaker US credit at the high-yield margins, and favours strong ABS, selective European sub-financials and CLO positions, with a gradual trim of double-B exposure.",
+      "asset_classes": [
+        "Fixed Income & Credit"
+      ],
+      "sub_asset_classes": [
+        "Fixed Income & Credit › Investment grade",
+        "Fixed Income & Credit › Securitised & ABS"
+      ],
+      "primary_theme": "Credit Conditions & Defaults",
+      "secondary_themes": [
+        "Valuations & Market Concentration"
+      ],
+      "subject_regions": [],
+      "vehicles": [],
+      "content_purpose": "house view",
+      "explicit_call": true,
+      "kind": "periodic",
+      "shelf_life": 1,
+      "argument": 2,
+      "series": false,
+      "taxonomy_version": "1.1.0",
+      "regions": [
+        "Global",
+        "UK",
+        "APAC",
+        "Switzerland"
+      ],
+      "fk_grade": 12.1,
+      "visual": {
+        "charts": 0,
+        "images": 2,
+        "lead_image": true,
+        "audio_embed": false,
+        "chart_hosts": [],
+        "interactive": false,
+        "video_embed": false,
+        "images_per_1000_words": 1.5
       }
     },
     {
@@ -121631,46 +122170,6 @@
         "interactive": false,
         "video_embed": false,
         "images_per_1000_words": null
-      }
-    },
-    {
-      "id": "b3830fbd-4510-4d73-bbd8-2dbd05f759d6",
-      "manager_id": "blackrock",
-      "title": "Public policy engagement and political activities policies",
-      "url": "https://www.blackrock.com/corporate/insights/thought-leadership/public-policy/public-policy-engagement-and-political-activities-policies",
-      "published_at": "2026-10-14T00:00:00+00:00",
-      "word_count": 905,
-      "format": "article",
-      "status": "read",
-      "summary": "BlackRock reports its framework for public policy engagement, stating that responsible corporate citizenship requires active participation in legislative and regulatory processes to advance shareholder and client interests. The firm outlines its governance structures, trade association memberships, and political participation activities, disclosing that it does not contribute corporate funds to political candidates or committees but maintains a voluntary employee-funded PAC that makes bipartisan contributions aligned with its public policy goals.",
-      "asset_classes": [],
-      "sub_asset_classes": [],
-      "primary_theme": "Financial Regulation",
-      "secondary_themes": [],
-      "subject_regions": [
-        "US"
-      ],
-      "vehicles": [],
-      "content_purpose": "product",
-      "explicit_call": false,
-      "kind": "other",
-      "shelf_life": 2,
-      "argument": 0,
-      "series": false,
-      "taxonomy_version": "1.1.0",
-      "regions": [
-        "Global"
-      ],
-      "fk_grade": 17.4,
-      "visual": {
-        "charts": 0,
-        "images": 0,
-        "lead_image": true,
-        "audio_embed": false,
-        "chart_hosts": [],
-        "interactive": false,
-        "video_embed": false,
-        "images_per_1000_words": 0
       }
     },
     {
@@ -130215,55 +130714,6 @@
         "interactive": false,
         "video_embed": false,
         "images_per_1000_words": 1.1
-      }
-    },
-    {
-      "id": "c0209477-451e-4932-9e90-093891b91505",
-      "manager_id": "blackrock",
-      "title": "Investment perspectives",
-      "url": "https://www.blackrock.com/corporate/insights/blackrock-investment-institute/publications/investment-perspective",
-      "published_at": "2026-10-14T00:00:00+00:00",
-      "word_count": 680,
-      "format": "article",
-      "status": "read",
-      "summary": "BlackRock argues that supply-side forces such as artificial intelligence and geopolitical fragmentation, rather than traditional business cycles, are now the primary market drivers, whilst U.S. policy shifts—particularly on trade, immigration and fiscal matters—risk destabilizing financial markets. The firm projects the average U.S. effective tariff rate will reach approximately 10%, expects fiscal deficits to remain above 5% through 2030, and forecasts long-term bond yields to stay elevated; it recommends staying pro-risk in equities but being selective, anticipating that as policy uncertainty dissipates, U.S. equities could resume global leadership.",
-      "asset_classes": [
-        "Equities",
-        "Fixed Income & Credit"
-      ],
-      "sub_asset_classes": [
-        "Equities › US",
-        "Fixed Income & Credit › Government & rates"
-      ],
-      "primary_theme": "Trade & Tariffs",
-      "secondary_themes": [
-        "Fiscal Policy & Sovereign Debt",
-        "AI Adoption & Economics"
-      ],
-      "subject_regions": [
-        "US"
-      ],
-      "vehicles": [],
-      "content_purpose": "house view",
-      "explicit_call": true,
-      "kind": "periodic",
-      "shelf_life": 1,
-      "argument": 2,
-      "series": true,
-      "taxonomy_version": "1.1.0",
-      "regions": [
-        "Global"
-      ],
-      "fk_grade": 10.7,
-      "visual": {
-        "charts": 2,
-        "images": 4,
-        "lead_image": true,
-        "audio_embed": false,
-        "chart_hosts": [],
-        "interactive": true,
-        "video_embed": false,
-        "images_per_1000_words": 5.9
       }
     },
     {
@@ -153735,6 +154185,48 @@
       }
     },
     {
+      "id": "e0722923-af8a-4f9e-b5c2-5bc775bb8091",
+      "manager_id": "blue-owl",
+      "title": "Defining Private Markets: Direct lending",
+      "url": "https://www.blueowl.com/insights/defining-private-markets-direct-lending",
+      "published_at": "2026-11-18T15:00:00+00:00",
+      "word_count": 1480,
+      "format": "article",
+      "status": "read",
+      "summary": null,
+      "asset_classes": [
+        "Private Markets"
+      ],
+      "sub_asset_classes": [
+        "Private Markets › Private credit"
+      ],
+      "primary_theme": "Credit Conditions & Defaults",
+      "secondary_themes": [],
+      "subject_regions": [],
+      "vehicles": [],
+      "content_purpose": "education",
+      "explicit_call": false,
+      "kind": "essay",
+      "shelf_life": 3,
+      "argument": 0,
+      "series": true,
+      "taxonomy_version": "1.1.0",
+      "regions": [
+        "Global"
+      ],
+      "fk_grade": 14,
+      "visual": {
+        "charts": 0,
+        "images": 0,
+        "lead_image": false,
+        "audio_embed": false,
+        "chart_hosts": [],
+        "interactive": false,
+        "video_embed": false,
+        "images_per_1000_words": 0
+      }
+    },
+    {
       "id": "e077fd2c-45ee-4a37-b683-180f32450671",
       "manager_id": "bnppam",
       "title": "Outlook 2027: Investment implications - BNP Paribas Asset Management",
@@ -158782,20 +159274,24 @@
       "word_count": 199,
       "format": "article",
       "status": "read",
-      "summary": null,
-      "asset_classes": [],
-      "sub_asset_classes": [],
-      "primary_theme": null,
+      "summary": "Barings, marking its tenth year as a global alternatives manager, reports through a Bloomberg spotlight that it plans to grow by acquisition. Co-head of global investments Martin Horne states that Barings has no private equity business and argues that such businesses cannot be built organically, so they must be bought. The excerpt is truncated behind a paywall, so the wider detail of the interview is not available",
+      "asset_classes": [
+        "Private Markets"
+      ],
+      "sub_asset_classes": [
+        "Private Markets › Private equity & buyouts"
+      ],
+      "primary_theme": "Asset Management Industry",
       "secondary_themes": [],
       "subject_regions": [],
       "vehicles": [],
-      "content_purpose": null,
-      "explicit_call": null,
-      "kind": null,
-      "shelf_life": null,
-      "argument": null,
-      "series": null,
-      "taxonomy_version": null,
+      "content_purpose": "market commentary",
+      "explicit_call": false,
+      "kind": "other",
+      "shelf_life": 0,
+      "argument": 0,
+      "series": false,
+      "taxonomy_version": "1.1.0",
       "regions": [
         "Global"
       ],
@@ -160704,51 +161200,6 @@
         "interactive": false,
         "video_embed": false,
         "images_per_1000_words": 3.6
-      }
-    },
-    {
-      "id": "eabca3c9-2475-4178-8ab4-90dc94fe8b34",
-      "manager_id": "blackrock",
-      "title": "Modern Financial Markets Need Pressure Valves",
-      "url": "https://www.blackrock.com/corporate/insights/thought-leadership/public-policy/blackrock-in-europe/europe-blog/pressure-valves",
-      "published_at": "2026-10-14T00:00:00+00:00",
-      "word_count": 690,
-      "format": "article",
-      "status": "read",
-      "summary": "BlackRock argues that post-2008 financial regulations have made the system safer but shifted risk from solvency to liquidity stress, whereby solvent institutions struggle to access cash quickly when margin demands surge synchronously across markets. The firm contends that traditional shock absorbers—banks—are now constrained by regulation and unable to supply liquidity when demand peaks, creating a dangerous mismatch. BlackRock proposes \"pressure valves\": targeted reforms to improve collateral mobility, strengthen repo markets, and upgrade infrastructure to ensure liquidity flows smoothly during stress without rolling back post-crisis safeguards.",
-      "asset_classes": [
-        "Fixed Income & Credit"
-      ],
-      "sub_asset_classes": [
-        "Fixed Income & Credit › Money markets & cash"
-      ],
-      "primary_theme": "Market Liquidity & Structure",
-      "secondary_themes": [
-        "Financial Stability & Systemic Risk",
-        "Financial Regulation"
-      ],
-      "subject_regions": [],
-      "vehicles": [],
-      "content_purpose": "thought leadership",
-      "explicit_call": false,
-      "kind": "essay",
-      "shelf_life": 3,
-      "argument": 3,
-      "series": false,
-      "taxonomy_version": "1.1.0",
-      "regions": [
-        "Global"
-      ],
-      "fk_grade": 13,
-      "visual": {
-        "charts": 0,
-        "images": 3,
-        "lead_image": true,
-        "audio_embed": false,
-        "chart_hosts": [],
-        "interactive": false,
-        "video_embed": false,
-        "images_per_1000_words": 4.3
       }
     },
     {
@@ -168820,44 +169271,6 @@
       }
     },
     {
-      "id": "f6f314a3-71d9-4de3-89e3-c054a71f66ab",
-      "manager_id": "blackrock",
-      "title": "Proxy voting power of choice",
-      "url": "https://www.blackrock.com/corporate/insights/thought-leadership/investment-stewardship/blackrock-voting-choice/proxy-voting-power-of-choice",
-      "published_at": "2026-10-14T00:00:00+00:00",
-      "word_count": 1671,
-      "format": "article",
-      "status": "read",
-      "summary": "BlackRock reports that it has expanded its Voting Choice programme, which allows asset owners to vote directly on corporate proxy matters rather than delegating this to BlackRock's stewardship team, with 25 per cent of eligible assets now enrolled. The firm argues that direct voting choice enhances corporate governance by broadening participation in shareholder democracy and that it intends to extend the capability to individual investors and expand the range of voting guidelines available.",
-      "asset_classes": [],
-      "sub_asset_classes": [],
-      "primary_theme": "Governance & Stewardship",
-      "secondary_themes": [],
-      "subject_regions": [],
-      "vehicles": [],
-      "content_purpose": "product",
-      "explicit_call": false,
-      "kind": "other",
-      "shelf_life": 2,
-      "argument": 1,
-      "series": false,
-      "taxonomy_version": "1.1.0",
-      "regions": [
-        "Global"
-      ],
-      "fk_grade": 13,
-      "visual": {
-        "charts": 0,
-        "images": 7,
-        "lead_image": true,
-        "audio_embed": false,
-        "chart_hosts": [],
-        "interactive": false,
-        "video_embed": false,
-        "images_per_1000_words": 4.2
-      }
-    },
-    {
       "id": "f71bd994-22b4-401e-b571-8069d1f4153b",
       "manager_id": "guggenheim",
       "title": "AI’s Promise and History’s Lessons",
@@ -172008,15 +172421,17 @@
       "word_count": 377,
       "format": "article",
       "status": "read",
-      "summary": null,
+      "summary": "Gemcorp Capital's second annual investor study, based on a survey of 250 investment decision-makers across 22 countries, reports that most respondents expect emerging market private credit to outperform developed market equivalents over the next five years, and that EM is the region where allocation plans are growing fastest. The firm argues that EM remains significantly underweight, with EM accounting for just 5.8% of private credit portfolios on average despite 60% of respondents already allocating to the asset class, and it explicitly frames this as a gap between conviction and actual capital commitments. Gemcorp presents this as evidence of a shift in how sophisticated allocators view geography, diversification and risk, though the piece's stated call is essentially that capital will follow the conviction already expressed.",
       "asset_classes": [
         "Private Markets"
       ],
       "sub_asset_classes": [
         "Private Markets › Private credit"
       ],
-      "primary_theme": null,
-      "secondary_themes": [],
+      "primary_theme": "Wealth & Private Markets Access",
+      "secondary_themes": [
+        "Credit Conditions & Defaults"
+      ],
       "subject_regions": [
         "Emerging Markets"
       ],
@@ -172025,9 +172440,9 @@
       "explicit_call": false,
       "kind": "essay",
       "shelf_life": 2,
-      "argument": 1,
+      "argument": 2,
       "series": false,
-      "taxonomy_version": null,
+      "taxonomy_version": "1.1.0",
       "regions": [
         "Global"
       ],
@@ -174158,6 +174573,50 @@
         "interactive": false,
         "video_embed": false,
         "images_per_1000_words": null
+      }
+    },
+    {
+      "id": "fde7a592-21bb-433c-bb0f-39e4821e43e0",
+      "manager_id": "janus-henderson",
+      "title": "Europe’s securitisation deal: the door is open, now the detail decides",
+      "url": "https://www.janushenderson.com/en-gb/institutional/article/europes-securitisation-deal-the-door-is-open-now-the-detail-decides/",
+      "published_at": "2026-11-18T11:52:08+00:00",
+      "word_count": 1248,
+      "format": "article",
+      "status": "read",
+      "summary": "Janus Henderson Investors (authors Ian Bettney and Nathan Fox) argue that the EU's provisional securitisation agreement of 21 October is the most credible reform attempt yet, removing barriers that have kept investors out, but that its impact will depend on technical standards still to be written. The firm reports that its advocacy succeeded on several fronts: the bespoke investor sanctions regime was dropped, the EU reporting template for non-EU deals was removed, and the UCITS single-securitisation limit rose from 10% to 25%, though it says the last could have gone further. Janus Henderson's stated view is that the detail will decide the outcome, particularly how \"equivalent\" third-country information is defined, and it calls for rules guided by outcomes over format, proportionality and measurement of results.",
+      "asset_classes": [
+        "Fixed Income & Credit"
+      ],
+      "sub_asset_classes": [
+        "Fixed Income & Credit › Securitised & ABS"
+      ],
+      "primary_theme": "Financial Regulation",
+      "secondary_themes": [],
+      "subject_regions": [
+        "Europe"
+      ],
+      "vehicles": [],
+      "content_purpose": "market commentary",
+      "explicit_call": false,
+      "kind": "essay",
+      "shelf_life": 1,
+      "argument": 2,
+      "series": false,
+      "taxonomy_version": "1.1.0",
+      "regions": [
+        "UK"
+      ],
+      "fk_grade": 13.5,
+      "visual": {
+        "charts": 1,
+        "images": 1,
+        "lead_image": true,
+        "audio_embed": false,
+        "chart_hosts": [],
+        "interactive": false,
+        "video_embed": false,
+        "images_per_1000_words": 0.8
       }
     },
     {
