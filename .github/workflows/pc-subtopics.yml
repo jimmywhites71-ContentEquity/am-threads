@@ -1,0 +1,27 @@
+name: Private credit sub-topics
+# Claude Haiku gives each private / structured credit piece in exports/pc.json a sub-topic, for the
+# AB GCO white-space work (James approved 19 Nov). Hard cost limit MAX_USD (default $1).
+# Result: exports/pc-subtopics.json on the judge-previews branch.
+on:
+  workflow_dispatch:
+    inputs:
+      max_usd: { description: 'Stop before this cost', required: false, default: '1.0' }
+permissions:
+  contents: write
+jobs:
+  classify:
+    runs-on: ubuntu-latest
+    timeout-minutes: 60
+    env:
+      GH_TOKEN: ${{ github.token }}
+      ANTHROPIC_API_KEY: ${{ secrets.ANTHROPIC_API_KEY }}
+      MAX_USD: ${{ inputs.max_usd || '1.0' }}
+    steps:
+      - uses: actions/checkout@v4
+      - run: |
+          gh api "repos/$GITHUB_REPOSITORY/contents/exports/pc.json?ref=judge-previews" -H "Accept: application/vnd.github.raw" > pc.json
+          python3 scripts/pc-subtopics.py pc.json pc-subtopics.json
+          SHA=$(gh api "repos/$GITHUB_REPOSITORY/contents/exports/pc-subtopics.json?ref=judge-previews" --jq .sha 2>/dev/null || true)
+          base64 -w0 pc-subtopics.json > b64.txt
+          if [ -n "$SHA" ]; then gh api -X PUT "repos/$GITHUB_REPOSITORY/contents/exports/pc-subtopics.json" -f message=subtopics -f branch=judge-previews -f sha="$SHA" -F content=@b64.txt >/dev/null
+          else gh api -X PUT "repos/$GITHUB_REPOSITORY/contents/exports/pc-subtopics.json" -f message=subtopics -f branch=judge-previews -F content=@b64.txt >/dev/null; fi
